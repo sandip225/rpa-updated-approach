@@ -9,6 +9,7 @@ class UserCreate(BaseModel):
     mobile: str
     password: str
     full_name: str
+    city: Optional[str] = None
 
 class UserLogin(BaseModel):
     email: str
