@@ -2,7 +2,7 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
   Home, User, FileText, Settings, LogOut, Zap, Flame, Droplets, Building,
-  Menu, X, Bell, ChevronDown, Shield, HelpCircle
+  Menu, X, Bell, ChevronDown, Shield, HelpCircle, MessageCircle
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -14,6 +14,7 @@ const Layout = () => {
 
   const navItems = [
     { path: '/', icon: Home, label: 'Dashboard' },
+    { path: '/guided-flow', icon: MessageCircle, label: 'Guided Flow', highlight: true },
     { path: '/services', icon: Settings, label: 'Services' },
     { path: '/applications', icon: FileText, label: 'My Applications' },
     { path: '/documents', icon: FileText, label: 'Documents' },
@@ -149,11 +150,16 @@ const Layout = () => {
                 className={`flex items-center gap-3 px-4 py-3 rounded-xl mb-1 transition-all ${
                   location.pathname === item.path
                     ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                    : item.highlight
+                    ? 'text-orange-600 bg-orange-50 hover:bg-orange-100 border border-orange-200'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-blue-600'
                 }`}
               >
                 <item.icon className="w-5 h-5" />
                 <span className="font-medium">{item.label}</span>
+                {item.highlight && location.pathname !== item.path && (
+                  <span className="ml-auto text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">New</span>
+                )}
               </Link>
             ))}
 

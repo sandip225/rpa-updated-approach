@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import engine, Base
-from app.routers import auth, users, services, applications, demo_government_simple as demo_government, rpa, services_api
+from app.routers import auth, users, services, applications, demo_government_simple as demo_government, rpa, services_api, guided_flow
 from app.config import get_settings
 
 settings = get_settings()
@@ -39,6 +39,7 @@ app.include_router(services_api.router)
 app.include_router(applications.router)
 app.include_router(demo_government.router)
 app.include_router(rpa.router)
+app.include_router(guided_flow.router)
 
 @app.get("/")
 def root():

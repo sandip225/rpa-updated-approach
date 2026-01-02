@@ -285,3 +285,24 @@ class DemoAnyrorApplication(Base):
     processing_notes = Column(Text)
     officer_name = Column(String(255), default="Revenue Officer")
     department = Column(String(100), default="Revenue Department")
+
+
+# Guided Flow Application Model
+class GuidedFlowApplication(Base):
+    """WhatsApp-style guided flow application submissions"""
+    __tablename__ = "guided_flow_applications"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    tracking_id = Column(String(20), unique=True, index=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    category = Column(String(50), nullable=False)  # gas, electricity, water, property
+    provider_id = Column(String(50), nullable=False)
+    provider_name = Column(String(100), nullable=False)
+    application_type = Column(String(50), nullable=False)  # name_change, new_connection
+    form_data = Column(JSON, nullable=False)
+    status = Column(String(50), default="submitted")  # submitted, processing, completed, rejected
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+    
+    # Relationship
+    user = relationship("User", backref="guided_flow_applications")

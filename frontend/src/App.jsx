@@ -10,6 +10,7 @@ import Services from './pages/Services';
 import Applications from './pages/Applications';
 import NameChangeForm from './pages/NameChangeForm';
 import RPADemo from './pages/RPADemo';
+import GuidedFlowPage from './pages/GuidedFlow';
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -54,6 +55,7 @@ function App() {
             <Route path="water" element={<NameChangeForm />} />
             <Route path="property" element={<NameChangeForm />} />
             <Route path="rpa-demo" element={<RPADemo />} />
+            <Route path="guided-flow" element={<GuidedFlowPage />} />
           </Route>
         </Routes>
       </BrowserRouter>
