@@ -26,14 +26,14 @@ docker-compose up -d
 
 ---
 
-## 🚀 Deploy to AWS EC2 with Docker
+## 🚀 Deploy to AWS EC2 with Docker + Nginx
 
 ### Step 1: Launch EC2 Instance
 ```bash
 # Use AWS Console or CLI
 # Instance Type: t2.medium or larger
 # OS: Ubuntu 22.04 LTS
-# Security Group: Open ports 22, 80, 443, 3003, 8000
+# Security Group: Open ports 22, 80, 443 ONLY
 ```
 
 ### Step 2: Connect to EC2
@@ -79,25 +79,36 @@ nano .env  # Update SECRET_KEY and other configs
 # Generate secret key
 openssl rand -hex 32
 
-# Start services
+# Start all services with Nginx
 docker-compose up -d
 
 # Check status
 docker-compose ps
-docker-compose logs -f
+docker-compose logs -f nginx
 ```
 
-### Step 5: Access Application
+### Step 5: Access Application (Single Port!)
 ```
-Frontend: http://YOUR_EC2_IP:3003
-Backend: http://YOUR_EC2_IP:8000
-API Docs: http://YOUR_EC2_IP:8000/docs
+Application: http://YOUR_EC2_IP
+API Docs: http://YOUR_EC2_IP/docs
+Health Check: http://YOUR_EC2_IP/health
 ```
+
+**Note:** Nginx routes everything through port 80:
+- `/` → Frontend
+- `/api/*` → Backend API
+- `/docs` → API Documentation
+- `/health` → Health Check
 
 ### Useful Commands
 ```bash
-# View logs
+# View all logs
 docker-compose logs -f
+
+# View specific service logs
+docker-compose logs -f nginx
+docker-compose logs -f backend
+docker-compose logs -f frontend
 
 # Restart services
 docker-compose restart
@@ -111,6 +122,27 @@ docker-compose up -d --build
 
 # Backup database
 docker-compose exec backend cp unified_portal.db /app/data/backup.db
+
+# Check Nginx config
+docker-compose exec nginx nginx -t
+```
+
+### Troubleshooting
+```bash
+# Check if services are running
+docker-compose ps
+
+# Check Nginx logs
+docker-compose logs nginx
+
+# Test backend directly
+curl http://localhost:8000/health
+
+# Test frontend directly
+curl http://localhost:3003
+
+# Restart Nginx only
+docker-compose restart nginx
 ```
 
 ---

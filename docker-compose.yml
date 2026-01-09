@@ -47,22 +47,26 @@ services:
       retries: 3
       start_period: 40s
 
-  # Nginx Reverse Proxy (Optional)
+  # Nginx Reverse Proxy
   nginx:
     image: nginx:alpine
     container_name: unified-portal-nginx
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
     depends_on:
       - backend
       - frontend
     networks:
       - unified-portal-network
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 volumes:
   backend-data:
