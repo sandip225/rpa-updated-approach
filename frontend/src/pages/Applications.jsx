@@ -110,14 +110,13 @@ const Applications = () => {
           </div>
           <div className="flex gap-2">
             <Link
-              to="/guided-flow"
-              className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              <MessageCircle className="w-4 h-4" />
-              Guided Flow
-            </Link>
-            <Link
               to="/services"
+              className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              New Application
+            </Link>
+          </div>
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               Apply New <ArrowRight className="w-4 h-4" />
@@ -174,11 +173,11 @@ const Applications = () => {
             <p className="text-gray-500 text-lg mb-2">No applications yet</p>
             <p className="text-gray-400 text-sm mb-6">Start by applying for a service</p>
             <Link
-              to="/guided-flow"
-              className="inline-flex items-center gap-2 bg-orange-500 text-white px-6 py-3 rounded-lg hover:bg-orange-600 transition-colors"
+              to="/services"
+              className="inline-flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
             >
-              <MessageCircle className="w-4 h-4" />
-              Try Guided Flow
+              <Plus className="w-4 h-4" />
+              Apply for Service
             </Link>
           </div>
         ) : (
