@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MessageCircle, CheckCircle, Clock, XCircle, ExternalLink } from 'lucide-react';
-import api from '../services/api';
+import api from '../api/axios';
 
 const GuidedFlow = () => {
   const [applications, setApplications] = useState([]);
