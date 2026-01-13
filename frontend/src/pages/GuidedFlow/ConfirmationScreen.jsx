@@ -198,6 +198,26 @@ const ConfirmationScreen = ({
           <p className="text-xs text-gray-400 mt-1">
             भविष्य के संदर्भ के लिए अपनी ट्रैकिंग आईडी सहेजें।
           </p>
+          
+          {/* Chrome Extension Download */}
+          <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
+            <p className="text-sm font-semibold text-purple-800 mb-2">
+              🚀 Want Automatic Fill? Install Chrome Extension!
+            </p>
+            <p className="text-xs text-purple-600 mb-2">
+              Extension automatically fills mobile & DGVCL - No copy-paste needed!
+            </p>
+            <a
+              href="https://github.com/Vaidehip0407/unified-portal/archive/refs/heads/main.zip"
+              download
+              className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all text-sm font-medium"
+            >
+              📥 Download Extension (2 min setup)
+            </a>
+            <p className="text-xs text-purple-500 mt-2">
+              Extract ZIP → chrome-extension folder → Load in Chrome
+            </p>
+          </div>
         </div>
       </div>
     </div>
