@@ -327,17 +327,6 @@ function addAutoFillButton() {
   });
 }
 
-// Initialize when page loads
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    addAutoFillButton();
-    autoFillOnLoad();
-  });
-} else {
-  addAutoFillButton();
-  autoFillOnLoad();
-}
-
 // Auto-fill on page load if data is available
 function autoFillOnLoad() {
   // Check if we're on DGVCL portal and have data
@@ -462,4 +451,15 @@ function fillFormWithData(data) {
   }
   
   showNotification(`Auto-filled mobile & ${data.provider}!`);
+}
+
+// Initialize when page loads
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => {
+    addAutoFillButton();
+    autoFillOnLoad();
+  });
+} else {
+  addAutoFillButton();
+  autoFillOnLoad();
 }
