@@ -1,0 +1,15 @@
+# Terraform Variables - Example File
+# Copy this to terraform.tfvars and fill in your values
+# NEVER commit terraform.tfvars to git!
+
+aws_region    = "ap-south-1"  # Mumbai
+environment   = "production"
+instance_type = "t2.micro"    # Free tier
+key_name      = "gov-portal"  # Your SSH key name in AWS
+use_elastic_ip = true
+
+# WhatsApp Configuration
+whatsapp_business_account_id = "900768459069553"
+whatsapp_phone_number_id     = "983643148159140"
+whatsapp_api_token           = "YOUR_WHATSAPP_API_TOKEN_HERE"
+whatsapp_verify_token        = "my_secure_token_2024"

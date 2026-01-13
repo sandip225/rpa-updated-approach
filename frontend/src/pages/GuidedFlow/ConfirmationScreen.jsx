@@ -199,24 +199,73 @@ const ConfirmationScreen = ({
             भविष्य के संदर्भ के लिए अपनी ट्रैकिंग आईडी सहेजें।
           </p>
           
-          {/* Chrome Extension Download */}
-          <div className="mt-4 p-3 bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg">
-            <p className="text-sm font-semibold text-purple-800 mb-2">
-              🚀 Want Automatic Fill? Install Chrome Extension!
-            </p>
-            <p className="text-xs text-purple-600 mb-2">
-              Extension automatically fills mobile & DGVCL - No copy-paste needed!
-            </p>
-            <a
-              href="https://github.com/Vaidehip0407/unified-portal/archive/refs/heads/main.zip"
-              download
-              className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all text-sm font-medium"
-            >
-              📥 Download Extension (2 min setup)
-            </a>
-            <p className="text-xs text-purple-500 mt-2">
-              Extract ZIP → chrome-extension folder → Load in Chrome
-            </p>
+          {/* Auto-Fill Options */}
+          <div className="mt-4 space-y-3">
+            {/* Chrome Extension Option */}
+            <div className="p-4 bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-300 rounded-xl">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl">🚀</span>
+                <div className="flex-1">
+                  <h4 className="font-bold text-purple-800 mb-1">
+                    Option 1: Chrome Extension (Recommended)
+                  </h4>
+                  <p className="text-xs text-purple-600 mb-2">
+                    ✅ 100% automatic fill • ✅ No copy-paste • ✅ 5 min setup
+                  </p>
+                  <a
+                    href="https://github.com/Vaidehip0407/unified-portal/archive/refs/heads/main.zip"
+                    download
+                    className="inline-block px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-all text-sm font-medium"
+                  >
+                    📥 Download Extension
+                  </a>
+                  <p className="text-xs text-purple-500 mt-2">
+                    Extract ZIP → chrome-extension folder → Load in chrome://extensions/
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* VNC Server Option */}
+            <div className="p-4 bg-gradient-to-r from-green-50 to-teal-50 border-2 border-green-300 rounded-xl">
+              <div className="flex items-start gap-3">
+                <span className="text-3xl">📺</span>
+                <div className="flex-1">
+                  <h4 className="font-bold text-green-800 mb-1">
+                    Option 2: Watch Bot Live (No Extension Needed)
+                  </h4>
+                  <p className="text-xs text-green-600 mb-2">
+                    ✅ See bot working • ✅ No installation • ✅ Works for everyone
+                  </p>
+                  <a
+                    href="http://98.93.30.22:6080/vnc.html"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all text-sm font-medium"
+                  >
+                    🎬 Watch Bot Live
+                  </a>
+                  <p className="text-xs text-green-500 mt-2">
+                    Opens in new tab • Password: dgvcl2024 • See bot fill form in real-time
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Manual Option (Current) */}
+            <div className="p-3 bg-gradient-to-r from-orange-50 to-yellow-50 border border-orange-200 rounded-lg">
+              <div className="flex items-start gap-2">
+                <span className="text-xl">📋</span>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-orange-800 text-sm mb-1">
+                    Option 3: Manual Copy-Paste (Current Method)
+                  </h4>
+                  <p className="text-xs text-orange-600">
+                    Use copy buttons above to fill manually
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

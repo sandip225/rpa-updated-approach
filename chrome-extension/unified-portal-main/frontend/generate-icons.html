@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PWA Icon Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #1e40af; }
+        canvas {
+            border: 2px solid #ddd;
+            margin: 20px 0;
+            display: block;
+        }
+        button {
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #1e3a8a; }
+        .preview { margin: 20px 0; }
+        input[type="file"] { margin: 20px 0; }
+        .instructions {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 PWA Icon Generator</h1>
+        
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Upload your logo/icon (PNG, JPG, SVG)</li>
+                <li>Click "Generate Icons"</li>
+                <li>Download all 3 icons</li>
+                <li>Place them in <code>frontend/public/</code> folder</li>
+            </ol>
+        </div>
+
+        <input type="file" id="imageInput" accept="image/*">
+        
+        <div class="preview">
+            <h3>Preview:</h3>
+            <canvas id="preview" width="200" height="200"></canvas>
+        </div>
+
+        <button onclick="generateIcons()">Generate All Icons</button>
+        
+        <div id="downloads"></div>
+    </div>
+
+    <script>
+        const imageInput = document.getElementById('imageInput');
+        const previewCanvas = document.getElementById('preview');
+        const previewCtx = previewCanvas.getContext('2d');
+        let uploadedImage = null;
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const img = new Image();
+                img.onload = () => {
+                    uploadedImage = img;
+                    // Draw preview
+                    previewCtx.fillStyle = '#1e40af';
+                    previewCtx.fillRect(0, 0, 200, 200);
+                    const size = Math.min(img.width, img.height);
+                    const x = (img.width - size) / 2;
+                    const y = (img.height - size) / 2;
+                    previewCtx.drawImage(img, x, y, size, size, 20, 20, 160, 160);
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function generateIcon(size, filename) {
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            const ctx = canvas.getContext('2d');
+
+            // Background
+            ctx.fillStyle = '#1e40af';
+            ctx.fillRect(0, 0, size, size);
+
+            if (uploadedImage) {
+                // Draw image centered
+                const imgSize = Math.min(uploadedImage.width, uploadedImage.height);
+                const x = (uploadedImage.width - imgSize) / 2;
+                const y = (uploadedImage.height - imgSize) / 2;
+                const padding = size * 0.1;
+                ctx.drawImage(
+                    uploadedImage,
+                    x, y, imgSize, imgSize,
+                    padding, padding, size - padding * 2, size - padding * 2
+                );
+            } else {
+                // Default icon with text
+                ctx.fillStyle = 'white';
+                ctx.font = `bold ${size * 0.3}px Arial`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('GOV', size / 2, size / 2);
+            }
+
+            // Download
+            canvas.toBlob((blob) => {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.textContent = `Download ${filename}`;
+                a.style.display = 'block';
+                a.style.margin = '10px 0';
+                a.style.color = '#1e40af';
+                document.getElementById('downloads').appendChild(a);
+            });
+        }
+
+        function generateIcons() {
+            document.getElementById('downloads').innerHTML = '<h3>Download Icons:</h3>';
+            generateIcon(192, 'pwa-192x192.png');
+            generateIcon(512, 'pwa-512x512.png');
+            generateIcon(180, 'apple-touch-icon.png');
+        }
+
+        // Generate default icons on load
+        window.onload = () => {
+            previewCtx.fillStyle = '#1e40af';
+            previewCtx.fillRect(0, 0, 200, 200);
+            previewCtx.fillStyle = 'white';
+            previewCtx.font = 'bold 60px Arial';
+            previewCtx.textAlign = 'center';
+            previewCtx.textBaseline = 'middle';
+            previewCtx.fillText('GOV', 100, 100);
+        };
+    </script>
+</body>
+</html>

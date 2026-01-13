@@ -1,0 +1,16 @@
+/* VPN Extension Override Protection */
+
+/* Prevent VPN toolbars/banners from breaking layout */
+body > div:not(#root) {
+  display: none !important;
+}
+
+/* Lock main app container */
+#root {
+  isolation: isolate !important;
+  contain: layout style paint !important;
+}
+
+/* Prevent external CSS injection */
+.bg-gradient-to-br,
+.

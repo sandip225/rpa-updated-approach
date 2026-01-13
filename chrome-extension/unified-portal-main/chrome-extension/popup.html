@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      width: 320px;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 400px;
+    }
+    .container {
+      padding: 20px;
+    }
+    .header {
+      text-align: center;
+      color: white;
+      margin-bottom: 20px;
+    }
+    .header h1 {
+      font-size: 18px;
+      margin-bottom: 5px;
+    }
+    .header p {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+    .status-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #ef4444;
+    }
+    .status-dot.connected {
+      background: #22c55e;
+    }
+    .status-text {
+      font-size: 14px;
+      color: #374151;
+    }
+    .login-form {
+      display: none;
+    }
+    .login-form.show {
+      display: block;
+    }
+    .user-info {
+      display: none;
+    }
+    .user-info.show {
+      display: block;
+    }
+    .input-group {
+      margin-bottom: 12px;
+    }
+    .input-group label {
+      display: block;
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 4px;
+    }
+    .input-group input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 14px;
+      outline: none;
+    }
+    .input-group input:focus {
+      border-color: #667eea;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    .btn-primary:hover {
+      opacity: 0.9;
+    }
+    .btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      margin-top: 10px;
+    }
+    .user-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #1f2937;
+    }
+    .user-email {
+      font-size: 12px;
+      color: #6b7280;
+    }
+    .data-preview {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #e5e7eb;
+    }
+    .data-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      padding: 5px 0;
+    }
+    .data-label {
+      color: #6b7280;
+    }
+    .data-value {
+      color: #1f2937;
+      font-weight: 500;
+    }
+    .supported-sites {
+      margin-top: 10px;
+    }
+    .supported-sites h3 {
+      font-size: 12px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+    .site-tag {
+      display: inline-block;
+      padding: 4px 8px;
+      background: #f3f4f6;
+      border-radius: 4px;
+      font-size: 10px;
+      color: #374151;
+      margin: 2px;
+    }
+    .error {
+      color: #ef4444;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .success {
+      color: #22c55e;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🏛️ Gujarat Services Auto-Fill</h1>
+      <p>Fill government forms automatically</p>
+    </div>
+
+    <div class="card">
+      <div class="status">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="status-text" id="statusText">Not Connected</span>
+      </div>
+
+      <!-- Login Form -->
+      <div class="login-form" id="loginForm">
+        <div class="input-group">
+          <label>Email</label>
+          <input type="email" id="email" placeholder="Enter your email">
+        </div>
+        <div class="input-group">
+          <label>Password</label>
+          <input type="password" id="password" placeholder="Enter your password">
+        </div>
+        <button class="btn btn-primary" id="loginBtn">Connect to Portal</button>
+        <div class="error" id="errorMsg"></div>
+      </div>
+
+      <!-- User Info -->
+      <div class="user-info" id="userInfo">
+        <div class="user-name" id="userName"></div>
+        <div class="user-email" id="userEmail"></div>
+        
+        <div class="data-preview">
+          <div class="data-item">
+            <span class="data-label">Mobile</span>
+            <span class="data-value" id="userMobile">-</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">City</span>
+            <span class="data-value" id="userCity">-</span>
+          </div>
+          <div class="data-item">
+            <span class="data-label">Aadhaar</span>
+            <span class="data-value" id="userAadhaar">-</span>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="fillBtn">Auto-Fill Current Page</button>
+        <button class="btn btn-secondary" id="logoutBtn">Disconnect</button>
+      </div>
+    </div>
+
+    <div class="card supported-sites">
+      <h3>Supported Websites:</h3>
+      <span class="site-tag">Torrent Power</span>
+      <span class="site-tag">Adani Gas</span>
+      <span class="site-tag">Gujarat Gas</span>
+      <span class="site-tag">AMC</span>
+      <span class="site-tag">AnyRoR</span>
+      <span class="site-tag">PGVCL</span>
+      <span class="site-tag">UGVCL</span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

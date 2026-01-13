@@ -1,0 +1,16 @@
+fastapi==0.109.0
+uvicorn==0.27.0
+starlette==0.35.0
+sqlalchemy==2.0.23
+python-multipart==0.0.6
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+pydantic==2.5.2
+pydantic-settings==2.1.0
+aiofiles==23.2.1
+pytesseract==0.3.10
+Pillow==10.1.0
+selenium==4.15.2
+webdriver-manager==4.0.1
+email-validator==2.1.0
+httpx==0.25.0

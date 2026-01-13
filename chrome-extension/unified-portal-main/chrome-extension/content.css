@@ -1,0 +1,45 @@
+/* Gujarat Services Auto-Fill Extension Styles */
+
+/* Highlight filled fields */
+.guj-autofill-highlight {
+  background-color: #e8f5e9 !important;
+  border-color: #4caf50 !important;
+  transition: background-color 0.3s ease;
+}
+
+/* Floating button styles */
+#gujAutoFillBtn {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif !important;
+}
+
+#gujAutoFillBtn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5) !important;
+}
+
+/* Notification styles */
+.guj-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 15px 25px;
+  border-radius: 10px;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 14px;
+  z-index: 999999;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  animation: gujSlideIn 0.3s ease;
+}
+
+@keyframes gujSlideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}

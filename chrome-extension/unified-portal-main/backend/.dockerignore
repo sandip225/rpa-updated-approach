@@ -1,0 +1,17 @@
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv
+.git
+.gitignore
+.dockerignore
+*.db
+screenshots/
+test_*.py
+debug_*.py
+check_db.py
+view_data.py

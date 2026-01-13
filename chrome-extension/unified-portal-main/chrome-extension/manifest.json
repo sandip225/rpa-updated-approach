@@ -1,0 +1,52 @@
+{
+  "manifest_version": 3,
+  "name": "Gujarat Services Auto-Fill",
+  "version": "1.0.0",
+  "description": "Auto-fill forms on Gujarat government and utility websites from your Unified Services Portal",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://portal.guvnl.in/*",
+    "https://connect.torrentpower.com/*",
+    "https://www.torrentpower.com/*",
+    "https://www.adanigas.com/*",
+    "https://www.gujaratgas.com/*",
+    "https://www.sabarmatigas.com/*",
+    "https://ahmedabadcity.gov.in/*",
+    "https://www.suratmunicipal.gov.in/*",
+    "https://vmc.gov.in/*",
+    "https://www.rmc.gov.in/*",
+    "https://anyror.gujarat.gov.in/*",
+    "https://enagar.gujarat.gov.in/*",
+    "https://www.pgvcl.com/*",
+    "https://www.ugvcl.com/*",
+    "https://www.mgvcl.com/*",
+    "https://www.dgvcl.com/*",
+    "http://localhost:3000/*",
+    "http://localhost:8000/*"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://portal.guvnl.in/*",
+        "https://connect.torrentpower.com/*",
+        "https://www.adanigas.com/*",
+        "https://www.gujaratgas.com/*",
+        "https://ahmedabadcity.gov.in/*",
+        "https://anyror.gujarat.gov.in/*"
+      ],
+      "js": ["content.js"],
+      "css": ["content.css"]
+    }
+  ],
+  "background": {
+    "service_worker": "background.js"
+  }
+}

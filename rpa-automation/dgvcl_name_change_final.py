@@ -81,7 +81,10 @@ class DGVCLNameChangeRPA:
         """
         print("\n🌐 Opening DGVCL Login Page...")
         self.driver.get(f"{self.portal_url}/login.php")
-        time.sleep(3)
+        
+        # Wait for page to fully load
+        print("⏳ Waiting for page to load...")
+        time.sleep(5)
         
         # Take screenshot of login page
         self.take_screenshot("01_login_page")
@@ -89,26 +92,111 @@ class DGVCLNameChangeRPA:
         print("🔐 Filling login form...")
         
         try:
-            # Mobile Number field
-            mobile_field = self.wait.until(
-                EC.presence_of_element_located((By.ID, "mobile"))
-            )
-            mobile_field.clear()
-            mobile_field.send_keys(mobile_number)
-            print(f"✅ Mobile Number: {mobile_number}")
+            # Try multiple selectors for mobile field
+            mobile_field = None
+            mobile_selectors = [
+                (By.ID, "mobile"),
+                (By.NAME, "mobile"),
+                (By.XPATH, "//input[@placeholder='Mobile Number']"),
+                (By.XPATH, "//input[@type='text' and contains(@class, 'form-control')]"),
+                (By.CSS_SELECTOR, "input[type='text']")
+            ]
             
-            # DISCOM dropdown
-            try:
-                discom_dropdown = Select(self.driver.find_element(By.ID, "discom"))
-                discom_dropdown.select_by_visible_text(discom)
-                print(f"✅ DISCOM: {discom}")
-            except Exception as e:
-                print(f"⚠️ DISCOM dropdown: {e}")
+            for selector_type, selector_value in mobile_selectors:
+                try:
+                    mobile_field = self.wait.until(
+                        EC.element_to_be_clickable((selector_type, selector_value))
+                    )
+                    if mobile_field:
+                        print(f"✅ Found mobile field using: {selector_type}={selector_value}")
+                        break
+                except:
+                    continue
+            
+            if not mobile_field:
+                print("❌ Could not find mobile field!")
+                self.take_screenshot("error_no_mobile_field")
+                return False
+            
+            # Clear and fill mobile number with retry
+            for attempt in range(3):
+                try:
+                    mobile_field.clear()
+                    time.sleep(0.5)
+                    mobile_field.click()
+                    time.sleep(0.5)
+                    mobile_field.send_keys(mobile_number)
+                    time.sleep(1)
+                    
+                    # Verify value was entered
+                    entered_value = mobile_field.get_attribute('value')
+                    if entered_value == mobile_number:
+                        print(f"✅ Mobile Number filled: {mobile_number}")
+                        break
+                    else:
+                        print(f"⚠️ Attempt {attempt + 1}: Value mismatch. Retrying...")
+                        if attempt == 2:
+                            print(f"❌ Failed to fill mobile after 3 attempts")
+                            return False
+                except Exception as e:
+                    print(f"⚠️ Attempt {attempt + 1} failed: {e}")
+                    if attempt == 2:
+                        return False
+            
+            time.sleep(2)
+            
+            # DISCOM dropdown with multiple selectors
+            discom_dropdown = None
+            discom_selectors = [
+                (By.ID, "discom"),
+                (By.NAME, "discom"),
+                (By.CSS_SELECTOR, "select.form-control"),
+                (By.XPATH, "//select[contains(@class, 'form-control')]")
+            ]
+            
+            for selector_type, selector_value in discom_selectors:
+                try:
+                    dropdown_element = self.driver.find_element(selector_type, selector_value)
+                    discom_dropdown = Select(dropdown_element)
+                    print(f"✅ Found discom dropdown using: {selector_type}={selector_value}")
+                    break
+                except:
+                    continue
+            
+            if discom_dropdown:
+                try:
+                    # Try different selection methods
+                    try:
+                        discom_dropdown.select_by_visible_text(discom)
+                    except:
+                        try:
+                            discom_dropdown.select_by_value(discom)
+                        except:
+                            # Find option containing DGVCL
+                            for option in discom_dropdown.options:
+                                if discom.upper() in option.text.upper():
+                                    option.click()
+                                    break
+                    
+                    time.sleep(1)
+                    selected_value = discom_dropdown.first_selected_option.text
+                    print(f"✅ DISCOM selected: {selected_value}")
+                except Exception as e:
+                    print(f"⚠️ DISCOM selection error: {e}")
+            else:
+                print("⚠️ Could not find DISCOM dropdown")
             
             time.sleep(2)
             
             # Take screenshot after filling
             self.take_screenshot("02_login_filled")
+            
+            # Verify fields are filled
+            final_mobile = mobile_field.get_attribute('value')
+            print(f"\n📋 Verification:")
+            print(f"  Mobile Field Value: {final_mobile}")
+            if discom_dropdown:
+                print(f"  DISCOM Selected: {discom_dropdown.first_selected_option.text}")
             
             print("\n✅ Login form filled successfully!")
             print("⏸️ Bot will stop here - User must:")
@@ -120,6 +208,8 @@ class DGVCLNameChangeRPA:
                 
         except Exception as e:
             print(f"⚠️ Login error: {e}")
+            import traceback
+            traceback.print_exc()
             self.take_screenshot("error_login")
             return False
     
