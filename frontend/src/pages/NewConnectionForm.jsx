@@ -91,6 +91,27 @@ const NewConnectionForm = () => {
         timestamp: Date.now(),
         application_type: 'new_connection'
       }));
+      
+      // Store with specific new connection key to avoid conflicts with name change
+      localStorage.setItem('dgvcl_new_connection_data', JSON.stringify({
+        mobile: formData.mobile,
+        consumer_type: formData.consumer_type,
+        category: formData.category,
+        area_type: formData.area_type,
+        connection_load: formData.connection_load,
+        applicant_name: formData.applicant_name,
+        address_line1: formData.address_line1,
+        address_line2: formData.address_line2,
+        district: formData.district,
+        taluka: formData.taluka,
+        pincode: formData.pincode,
+        email: formData.email,
+        nearest_consumer_no: formData.nearest_consumer_no,
+        connection_load: formData.connection_load,
+        
+        timestamp: Date.now(),
+        application_type: 'new_connection'
+      }));
 
       // Open DGVCL portal with login data
       const portalUrl = `https://portal.guvnl.in/login.php?mobile=${formData.mobile}&discom=${selectedProvider.name}`;

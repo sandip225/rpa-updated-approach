@@ -1,5 +1,5 @@
-// DGVCL Complete Auto-Fill Extension - v4.0 (Login + New Connection)
-console.log('🚀 DGVCL Extension v4.0 - Login + New Connection Support');
+// DGVCL Complete Auto-Fill Extension - v5.0 (Complete Flow Automation)
+console.log('🚀 DGVCL Extension v5.0 - Complete Flow Automation');
 
 // Run on page load
 window.addEventListener('load', runExtension);
@@ -11,42 +11,39 @@ function runExtension() {
   const url = window.location.href;
   console.log('🔍 Page:', url);
   
-  // LOGIN FLOW
+  // STEP 1: Login Page
   if (url.includes('login.php')) {
-    setTimeout(handleLogin, 1000);
+    setTimeout(handleLoginPage, 1000);
   }
+  // STEP 2: OTP Page
   else if (url.includes('checkOtp.php')) {
-    setTimeout(handleOTP, 500);
+    setTimeout(handleOTPPage, 500);
   }
+  // STEP 3: Select User Page
   else if (url.includes('Submit_Otp.php')) {
-    setTimeout(handleSelectUser, 1000);
+    setTimeout(handleSelectUserPage, 1000);
   }
+  // STEP 4: Dashboard Page
   else if (url.includes('prtlDashboard.php')) {
-    handleDashboard();
+    setTimeout(handleDashboardPage, 2000);
   }
-  
-  // NEW CONNECTION FLOW
-  else if (url.includes('LTConsumerReg.php')) {
-    setTimeout(handleNewConnectionForm, 2000);
-  }
-  
-  // NAME CHANGE FLOW
-  else if (url.includes('ltsrDetails_name_change.php')) {
-    setTimeout(handleNameChangeForm, 2000);
+  // STEP 5: Name Change Form Page
+  else if (url.includes('ltNameChange.php')) {
+    setTimeout(handleNameChangeFormPage, 2000);
   }
 }
 
-// ============ LOGIN FLOW ============
-function handleLogin() {
+// ============ STEP 1: LOGIN PAGE ============
+function handleLoginPage() {
   const params = new URLSearchParams(window.location.search);
   const mobile = params.get('mobile');
   const discom = params.get('discom');
   
   if (!mobile) return;
   
-  console.log('📱 Login - Filling:', mobile, discom);
+  console.log('📱 STEP 1: Login - Filling:', mobile, discom);
   
-  // Fill Mobile
+  // Fill Mobile Number
   const mobileInput = document.querySelector('input[placeholder="Mobile No"]') ||
                      document.querySelector('input[type="text"]:not([placeholder*="Captcha"])');
   
@@ -54,10 +51,11 @@ function handleLogin() {
     mobileInput.value = mobile;
     mobileInput.dispatchEvent(new Event('input', {bubbles: true}));
     mobileInput.style.background = '#c8f7c5';
+    mobileInput.style.border = '2px solid #27ae60';
     console.log('✅ Mobile filled');
   }
   
-  // Fill DISCOM
+  // Fill DISCOM Dropdown
   const select = document.querySelector('select');
   if (select && discom) {
     for (let opt of select.options) {
@@ -65,91 +63,127 @@ function handleLogin() {
         select.value = opt.value;
         select.dispatchEvent(new Event('change', {bubbles: true}));
         select.style.background = '#c8f7c5';
+        select.style.border = '2px solid #27ae60';
         console.log('✅ DISCOM selected');
         break;
       }
     }
   }
   
-  showMsg('✅ Auto-filled: ' + mobile + ' / ' + discom + '\n👉 Enter Captcha & Click Login', 'green');
+  showMsg('✅ STEP 1: Auto-filled Login\n👉 Enter Captcha & Click Login', 'green');
 }
 
-function handleOTP() {
-  showMsg('📱 Enter OTP sent to your mobile\n👉 Then click Submit Otp', 'blue');
+// ============ STEP 2: OTP PAGE ============
+function handleOTPPage() {
+  console.log('📱 STEP 2: OTP Page');
+  showMsg('📱 STEP 2: Enter OTP\n👉 Enter OTP sent to mobile & Click Submit', 'blue');
   
+  // Focus OTP field
   const otpInput = document.querySelector('input[placeholder*="OTP"]') || 
                    document.querySelector('input[type="text"]');
-  if (otpInput) otpInput.focus();
-}
-
-function handleSelectUser() {
-  console.log('📍 Auto-submitting user selection...');
-  showMsg('🔄 Auto-submitting...', 'orange');
-  
-  const submitBtn = document.querySelector('input[value="Submit"]') ||
-                   document.querySelector('input[type="submit"]');
-  
-  if (submitBtn) {
-    submitBtn.click();
-    console.log('✅ Submit clicked');
+  if (otpInput) {
+    otpInput.focus();
+    otpInput.style.border = '2px solid #3498db';
   }
 }
 
-function handleDashboard() {
-  showMsg('✅ Login Successful!', 'green');
+// ============ STEP 3: SELECT USER PAGE ============
+function handleSelectUserPage() {
+  console.log('🔄 STEP 3: Auto-submitting user selection...');
+  showMsg('🔄 STEP 3: Auto-submitting...', 'orange');
   
-  // Check if we have new connection data
-  const storedData = localStorage.getItem('dgvcl_autofill_data');
-  if (storedData) {
-    const data = JSON.parse(storedData);
-    if (data.application_type === 'new_connection') {
-      showMsg('🤖 Auto-navigating to New Connection...', 'blue');
-      
-      // Wait 3 seconds then click New Connection
-      setTimeout(() => {
-        // Find New Connection link/button
-        const newConnectionLink = document.querySelector('a[href*="NewConnection"]') ||
-                                 document.querySelector('a[href*="newconnection"]') ||
-                                 document.querySelector('a[href*="LTConsumerReg"]') ||
-                                 document.querySelector('img[alt*="New Connection"]') ||
-                                 document.querySelector('img[alt*="new connection"]');
-        
-        if (newConnectionLink) {
-          console.log('✅ Found New Connection link, clicking...');
-          newConnectionLink.click();
-        } else {
-          // Try to find by text content
-          const allLinks = document.querySelectorAll('a, div, span');
-          allLinks.forEach(link => {
-            if (link.textContent && link.textContent.toLowerCase().includes('new connection')) {
-              console.log('✅ Found New Connection by text, clicking...');
-              link.click();
-            }
-          });
-        }
-        
-        // If still not found, show manual instruction
-        setTimeout(() => {
-          if (window.location.href.includes('prtlDashboard.php')) {
-            showMsg('👉 Please click "New Connection" manually', 'orange');
-          }
-        }, 2000);
-        
-      }, 3000);
+  setTimeout(() => {
+    const submitBtn = document.querySelector('input[value="Submit"]') ||
+                     document.querySelector('input[type="submit"]') ||
+                     document.querySelector('button[type="submit"]');
+    
+    if (submitBtn) {
+      console.log('✅ Submit button found, clicking...');
+      submitBtn.click();
     } else {
-      showMsg('👉 Navigate to: New Connection → LT New Connection', 'purple');
+      // Fallback: find any button with Submit text
+      document.querySelectorAll('input, button').forEach(btn => {
+        if (btn.value === 'Submit' || btn.textContent === 'Submit') {
+          console.log('✅ Submit button (fallback) found, clicking...');
+          btn.click();
+        }
+      });
     }
-  }
+  }, 1500);
 }
 
-// ============ NAME CHANGE FORM ============
-function handleNameChangeForm() {
-  console.log('📍 LT Name Change Form detected');
+// ============ STEP 4: DASHBOARD PAGE ============
+function handleDashboardPage() {
+  console.log('🏠 STEP 4: Dashboard - Looking for LT Name Change...');
   
-  // Get stored data
-  const storedData = localStorage.getItem('dgvcl_autofill_data');
+  // Check if we have name change data - try both keys
+  let storedData = localStorage.getItem('dgvcl_name_change_data') || localStorage.getItem('dgvcl_autofill_data');
+  if (!storedData) {
+    showMsg('✅ STEP 4: Dashboard loaded\n👉 Manually click "LT Name Change"', 'green');
+    return;
+  }
+  
+  const data = JSON.parse(storedData);
+  if (data.application_type !== 'name_change') {
+    showMsg('✅ STEP 4: Dashboard loaded\n👉 Navigate manually', 'green');
+    return;
+  }
+  
+  showMsg('🤖 STEP 4: Auto-clicking "LT Name Change"...', 'blue');
+  
+  // Wait 3 seconds then click LT Name Change
+  setTimeout(() => {
+    // Multiple ways to find LT Name Change link
+    const nameChangeLink = 
+      // Method 1: Direct link
+      document.querySelector('a[href*="ltNameChange"]') ||
+      document.querySelector('a[href*="namechange"]') ||
+      // Method 2: By text content
+      Array.from(document.querySelectorAll('a')).find(a => 
+        a.textContent.toLowerCase().includes('name change') ||
+        a.textContent.toLowerCase().includes('lt name change')
+      ) ||
+      // Method 3: By image alt text
+      document.querySelector('img[alt*="Name Change"]')?.parentElement ||
+      // Method 4: By onclick attribute
+      document.querySelector('[onclick*="namechange"]') ||
+      document.querySelector('[onclick*="ltNameChange"]');
+    
+    if (nameChangeLink) {
+      console.log('✅ Found LT Name Change link, clicking...');
+      nameChangeLink.click();
+    } else {
+      // Manual search in all clickable elements
+      const allClickable = document.querySelectorAll('a, div, span, td, li');
+      allClickable.forEach(element => {
+        const text = element.textContent || element.innerText || '';
+        if (text.toLowerCase().includes('name change') || 
+            text.toLowerCase().includes('lt name change')) {
+          console.log('✅ Found Name Change element by text, clicking...');
+          element.click();
+        }
+      });
+    }
+    
+    // If still not found, show manual instruction
+    setTimeout(() => {
+      if (window.location.href.includes('prtlDashboard.php')) {
+        showMsg('⚠️ Could not find "LT Name Change"\n👉 Please click manually', 'orange');
+      }
+    }, 2000);
+    
+  }, 3000);
+}
+
+// ============ STEP 5: NAME CHANGE FORM PAGE ============
+function handleNameChangeFormPage() {
+  console.log('📝 STEP 5: Name Change Form detected');
+  
+  // Get stored data - try both keys
+  let storedData = localStorage.getItem('dgvcl_name_change_data') || localStorage.getItem('dgvcl_autofill_data');
   if (!storedData) {
     console.log('❌ No stored data found');
+    showMsg('⚠️ No data found\n👉 Fill form manually', 'orange');
     return;
   }
   
@@ -160,207 +194,99 @@ function handleNameChangeForm() {
   }
   
   console.log('📦 Filling Name Change form with:', data);
-  showMsg('🤖 Auto-filling Name Change form...', 'blue');
+  showMsg('🤖 STEP 5: Auto-filling Name Change form...', 'blue');
   
   let filled = 0;
   
-  // Step 1: Applicant Details
-  
-  // New Name field
-  if (data.new_name) {
-    const nameInput = document.querySelector('input[name*="name"], input[name*="Name"]');
-    if (nameInput) {
-      fillInput(nameInput, data.new_name);
-      filled++;
+  // Wait for form to load completely
+  setTimeout(() => {
+    
+    // Fill New Name
+    if (data.new_name) {
+      const nameInputs = [
+        document.querySelector('input[name*="name"]'),
+        document.querySelector('input[name*="Name"]'),
+        document.querySelector('input[placeholder*="name"]'),
+        document.querySelector('input[placeholder*="Name"]')
+      ];
+      
+      nameInputs.forEach(input => {
+        if (input && !input.value) {
+          fillInput(input, data.new_name);
+          filled++;
+        }
+      });
     }
-  }
-  
-  // Reason dropdown
-  if (data.reason) {
-    const reasonSelect = document.querySelector('select[name*="reason"], select[name*="Reason"]');
-    if (reasonSelect) {
-      selectOption(reasonSelect, data.reason);
-      filled++;
+    
+    // Fill Reason dropdown
+    if (data.reason) {
+      const reasonSelects = [
+        document.querySelector('select[name*="reason"]'),
+        document.querySelector('select[name*="Reason"]'),
+        document.querySelector('select[id*="reason"]')
+      ];
+      
+      reasonSelects.forEach(select => {
+        if (select) {
+          selectOption(select, data.reason);
+          filled++;
+        }
+      });
     }
-  }
-  
-  // Security Deposit radio buttons
-  if (data.security_deposit_option) {
-    const radioButtons = document.querySelectorAll('input[type="radio"]');
-    radioButtons.forEach(radio => {
-      if (data.security_deposit_option === 'entire' && radio.value.includes('entire')) {
-        radio.checked = true;
-        radio.dispatchEvent(new Event('change'));
-        filled++;
-      } else if (data.security_deposit_option === 'difference' && radio.value.includes('difference')) {
-        radio.checked = true;
-        radio.dispatchEvent(new Event('change'));
-        filled++;
-      }
-    });
-  }
-  
-  // Old Security Deposit Amount
-  if (data.old_security_deposit) {
-    const oldDepositInput = document.querySelector('input[name*="old"], input[name*="Old"], input[name*="deposit"]');
-    if (oldDepositInput) {
-      fillInput(oldDepositInput, data.old_security_deposit);
-      filled++;
+    
+    // Handle Security Deposit radio buttons
+    if (data.security_deposit_option) {
+      const radioButtons = document.querySelectorAll('input[type="radio"]');
+      radioButtons.forEach(radio => {
+        const value = radio.value.toLowerCase();
+        const option = data.security_deposit_option.toLowerCase();
+        
+        if ((option === 'entire' && value.includes('entire')) ||
+            (option === 'difference' && value.includes('difference'))) {
+          radio.checked = true;
+          radio.dispatchEvent(new Event('change', {bubbles: true}));
+          filled++;
+        }
+      });
     }
-  }
-  
-  if (filled > 0) {
-    showMsg(`✅ Auto-filled ${filled} fields!\n👉 Upload documents & Submit`, 'green');
-    console.log(`✅ Filled ${filled} fields in Name Change form`);
-  } else {
-    showMsg('⚠️ Could not find form fields\n👉 Please fill manually', 'orange');
-  }
+    
+    // Fill Old Security Deposit Amount
+    if (data.old_security_deposit) {
+      const depositInputs = [
+        document.querySelector('input[name*="deposit"]'),
+        document.querySelector('input[name*="Deposit"]'),
+        document.querySelector('input[name*="amount"]'),
+        document.querySelector('input[name*="Amount"]')
+      ];
+      
+      depositInputs.forEach(input => {
+        if (input && !input.value) {
+          fillInput(input, data.old_security_deposit);
+          filled++;
+        }
+      });
+    }
+    
+    if (filled > 0) {
+      showMsg(`✅ STEP 5: Auto-filled ${filled} fields!\n👉 Upload documents & Submit`, 'green');
+      console.log(`✅ Filled ${filled} fields in Name Change form`);
+    } else {
+      showMsg('⚠️ Could not find form fields\n👉 Please fill manually', 'orange');
+      
+      // Debug: Show available form elements
+      console.log('Available inputs:', document.querySelectorAll('input'));
+      console.log('Available selects:', document.querySelectorAll('select'));
+    }
+    
+  }, 1500);
 }
 
-// ============ NEW CONNECTION FORM ============
-function handleNewConnectionForm() {
-  console.log('📍 LT New Connection Form detected');
-  
-  // Get stored data
-  const storedData = localStorage.getItem('dgvcl_autofill_data');
-  if (!storedData) {
-    console.log('❌ No stored data found');
-    return;
-  }
-  
-  const data = JSON.parse(storedData);
-  if (data.application_type !== 'new_connection') {
-    console.log('❌ Not new connection data');
-    return;
-  }
-  
-  console.log('📦 Filling New Connection form with:', data);
-  showMsg('🤖 Auto-filling New Connection form...', 'blue');
-  
-  let filled = 0;
-  
-  // Service Request Information
-  if (data.consumer_type) {
-    const consumerTypeSelect = document.querySelector('select[name*="consumer_type"], select[name*="ConsumerType"]');
-    if (consumerTypeSelect) {
-      selectOption(consumerTypeSelect, data.consumer_type);
-      filled++;
-    }
-  }
-  
-  if (data.category) {
-    const categorySelect = document.querySelector('select[name*="category"], select[name*="Category"]');
-    if (categorySelect) {
-      selectOption(categorySelect, data.category);
-      filled++;
-    }
-  }
-  
-  if (data.area_type) {
-    const areaTypeSelect = document.querySelector('select[name*="area"], select[name*="Area"]');
-    if (areaTypeSelect) {
-      selectOption(areaTypeSelect, data.area_type);
-      filled++;
-    }
-  }
-  
-  // Applicant Details
-  if (data.applicant_name) {
-    const nameInput = document.querySelector('input[name*="name"], input[name*="Name"]');
-    if (nameInput) {
-      fillInput(nameInput, data.applicant_name);
-      filled++;
-    }
-  }
-  
-  if (data.mobile) {
-    const mobileInput = document.querySelector('input[name*="mobile"], input[name*="Mobile"]');
-    if (mobileInput) {
-      fillInput(mobileInput, data.mobile);
-      filled++;
-    }
-  }
-  
-  if (data.email) {
-    const emailInput = document.querySelector('input[name*="email"], input[name*="Email"]');
-    if (emailInput) {
-      fillInput(emailInput, data.email);
-      filled++;
-    }
-  }
-  
-  // Address Details
-  if (data.address_line1) {
-    const addr1Input = document.querySelector('input[name*="address1"], input[name*="Address1"], textarea[name*="address"]');
-    if (addr1Input) {
-      fillInput(addr1Input, data.address_line1);
-      filled++;
-    }
-  }
-  
-  if (data.address_line2) {
-    const addr2Input = document.querySelector('input[name*="address2"], input[name*="Address2"]');
-    if (addr2Input) {
-      fillInput(addr2Input, data.address_line2);
-      filled++;
-    }
-  }
-  
-  if (data.district) {
-    const districtSelect = document.querySelector('select[name*="district"], select[name*="District"]');
-    if (districtSelect) {
-      selectOption(districtSelect, data.district);
-      filled++;
-    }
-  }
-  
-  if (data.taluka) {
-    const talukaInput = document.querySelector('input[name*="taluka"], input[name*="Taluka"], select[name*="taluka"]');
-    if (talukaInput) {
-      if (talukaInput.tagName === 'SELECT') {
-        selectOption(talukaInput, data.taluka);
-      } else {
-        fillInput(talukaInput, data.taluka);
-      }
-      filled++;
-    }
-  }
-  
-  if (data.pincode) {
-    const pincodeInput = document.querySelector('input[name*="pin"], input[name*="Pin"], input[name*="postal"]');
-    if (pincodeInput) {
-      fillInput(pincodeInput, data.pincode);
-      filled++;
-    }
-  }
-  
-  if (data.nearest_consumer_no) {
-    const nearestInput = document.querySelector('input[name*="nearest"], input[name*="Nearest"]');
-    if (nearestInput) {
-      fillInput(nearestInput, data.nearest_consumer_no);
-      filled++;
-    }
-  }
-  
-  if (data.connection_load) {
-    const loadInput = document.querySelector('input[name*="load"], input[name*="Load"], input[name*="kw"]');
-    if (loadInput) {
-      fillInput(loadInput, data.connection_load);
-      filled++;
-    }
-  }
-  
-  if (filled > 0) {
-    showMsg(`✅ Auto-filled ${filled} fields!\n👉 Review & Submit form`, 'green');
-    console.log(`✅ Filled ${filled} fields in New Connection form`);
-  } else {
-    showMsg('⚠️ Could not find form fields\n👉 Please fill manually', 'orange');
-  }
-}
-
-// Helper Functions
+// ============ HELPER FUNCTIONS ============
 function fillInput(input, value) {
+  if (!input) return;
+  
   input.focus();
+  input.value = '';
   input.value = value;
   input.dispatchEvent(new Event('input', {bubbles: true}));
   input.dispatchEvent(new Event('change', {bubbles: true}));
@@ -369,6 +295,8 @@ function fillInput(input, value) {
 }
 
 function selectOption(select, value) {
+  if (!select) return;
+  
   for (let opt of select.options) {
     if (opt.text.toUpperCase().includes(value.toUpperCase()) || 
         opt.value.toUpperCase().includes(value.toUpperCase())) {
@@ -390,6 +318,7 @@ function showMsg(text, color) {
     purple: '#9b59b6'
   };
   
+  // Remove old notification
   const old = document.getElementById('dgvcl-msg');
   if (old) old.remove();
   
@@ -416,4 +345,4 @@ function showMsg(text, color) {
   setTimeout(() => { if(div.parentNode) div.remove(); }, 8000);
 }
 
-console.log('✅ DGVCL Extension Ready - Login + New Connection!');
+console.log('✅ DGVCL Extension Ready - Complete 5-Step Automation!');

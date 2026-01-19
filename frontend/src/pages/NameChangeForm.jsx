@@ -81,13 +81,28 @@ const NameChangeForm = () => {
 
       await api.post(`/applications/${appResponse.data.id}/submit`);
 
-      // Store form data for auto-fill
+      // Store form data for auto-fill with specific key for name change
       localStorage.setItem('dgvcl_autofill_data', JSON.stringify({
         application_type: 'name_change',
         mobile: formData.mobile,
         consumer_number: formData.consumer_number || formData.service_number,
         provider: selectedSupplier.name,
         // Name change specific fields
+        new_name: formData.new_name,
+        reason: formData.reason,
+        security_deposit_option: formData.security_deposit_option,
+        old_security_deposit: formData.old_security_deposit,
+        applicant_name: formData.applicant_name,
+        email: formData.email,
+        timestamp: Date.now()
+      }));
+      
+      // Also store with specific name change key to avoid conflicts
+      localStorage.setItem('dgvcl_name_change_data', JSON.stringify({
+        application_type: 'name_change',
+        mobile: formData.mobile,
+        consumer_number: formData.consumer_number || formData.service_number,
+        provider: selectedSupplier.name,
         new_name: formData.new_name,
         reason: formData.reason,
         security_deposit_option: formData.security_deposit_option,
