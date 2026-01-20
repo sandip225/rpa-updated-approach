@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../api/axios';
 import { ArrowLeft, ExternalLink, Zap, Flame, Droplets, Building, CheckCircle } from 'lucide-react';
 import { suppliers, getSuppliers } from '../data/supplierData';
+import RPAController from '../components/RPAController';
 
 const NameChangeForm = () => {
   const location = useLocation();
@@ -13,12 +14,12 @@ const NameChangeForm = () => {
   // Get category from URL path (e.g., /electricity -> electricity)
   const category = location.pathname.replace('/', '');
   
-  const [step, setStep] = useState(1); // 1: Select Supplier, 2: Fill Form, 3: RPA Processing, 4: Success
+  const [step, setStep] = useState(1); // 1: Select Supplier, 2: Fill Form, 3: Choose Method, 4: RPA/Extension, 5: Success
   const [selectedSupplier, setSelectedSupplier] = useState(null);
   const [formData, setFormData] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState('');
-  const [iframeUrl, setIframeUrl] = useState('');
+  const [automationMethod, setAutomationMethod] = useState(''); // 'rpa' or 'extension'
 
   const categoryData = suppliers[category];
   const supplierList = getSuppliers(category);
@@ -80,6 +81,67 @@ const NameChangeForm = () => {
       });
 
       await api.post(`/applications/${appResponse.data.id}/submit`);
+
+      // Go to method selection step
+      setStep(3);
+      setMessage(`Application saved! Tracking ID: ${appResponse.data.tracking_id}`);
+      
+    } catch (error) {
+      setMessage('Failed to save application. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  // Handle automation method selection
+  const handleMethodSelection = (method) => {
+    setAutomationMethod(method);
+    
+    if (method === 'rpa') {
+      // Go to RPA step
+      setStep(4);
+      setMessage('🤖 RPA Automation selected - Complete control from browser');
+    } else {
+      // Extension method
+      handleExtensionMethod();
+    }
+  };
+
+  // Handle extension method
+  const handleExtensionMethod = () => {
+    // Store form data for auto-fill
+    localStorage.setItem('dgvcl_autofill_data', JSON.stringify({
+      application_type: 'name_change',
+      mobile: formData.mobile,
+      consumer_number: formData.consumer_number || formData.service_number,
+      provider: selectedSupplier.name,
+      new_name: formData.new_name,
+      reason: formData.reason,
+      security_deposit_option: formData.security_deposit_option,
+      old_security_deposit: formData.old_security_deposit,
+      applicant_name: formData.applicant_name,
+      email: formData.email,
+      timestamp: Date.now()
+    }));
+
+    // Open DGVCL portal
+    const portalUrl = `https://portal.guvnl.in/login.php?mobile=${formData.mobile}&discom=${selectedSupplier.name}`;
+    window.open(portalUrl, '_blank');
+    
+    setStep(5);
+    setMessage('✅ Extension method - DGVCL portal opened in new tab');
+  };
+
+  // Handle RPA completion
+  const handleRPAComplete = (result) => {
+    setStep(5);
+    setMessage('🎉 RPA automation completed successfully!');
+  };
+
+  // Handle RPA error
+  const handleRPAError = (error) => {
+    setMessage(`❌ RPA automation failed: ${error.message}`);
+  };
 
       // Store form data for auto-fill with specific key for name change
       localStorage.setItem('dgvcl_autofill_data', JSON.stringify({
@@ -369,14 +431,14 @@ const NameChangeForm = () => {
       <div className="bg-white shadow-lg rounded-lg p-8 mx-6">
         {/* Step Indicator */}
         <div className="flex items-center justify-center gap-4 mb-8">
-          {[1, 2, 3, 4].map((s) => (
+          {[1, 2, 3, 4, 5].map((s) => (
             <div key={s} className="flex items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
                 step >= s ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-500'
               }`}>
                 {step > s ? <CheckCircle className="w-5 h-5" /> : s}
               </div>
-              {s < 4 && (
+              {s < 5 && (
                 <div className={`w-12 h-1 mx-1 ${step > s ? 'bg-blue-600' : 'bg-gray-200'}`} />
               )}
             </div>
@@ -664,69 +726,126 @@ const NameChangeForm = () => {
           </div>
         )}
 
-        {/* Step 3: RPA Processing with iframe */}
+        {/* Step 3: Choose Automation Method */}
         {step === 3 && (
           <div>
-            <div className="text-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800 mb-2">
-                🤖 RPA Bot is Processing Your Application
-              </h2>
-              <p className="text-gray-500">
-                Watch the bot automatically fill and submit your form on {selectedSupplier?.name} portal
+            <h2 className="text-xl font-bold text-gray-800 mb-2 text-center">
+              Choose Automation Method
+            </h2>
+            <p className="text-gray-500 text-center mb-6">
+              Select how you want to complete the DGVCL automation
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* RPA Bot Option */}
+              <div className="border-2 border-blue-200 rounded-xl p-6 hover:border-blue-400 transition-all cursor-pointer group"
+                   onClick={() => handleMethodSelection('rpa')}>
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-200">
+                    <span className="text-2xl">🤖</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">RPA Bot Automation</h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Complete browser-based automation with real-time monitoring
+                  </p>
+                  
+                  <div className="space-y-2 text-left">
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>No extension required</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Real-time progress tracking</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Complete browser control</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-orange-600">
+                      <span className="w-4 h-4 text-center">⚠️</span>
+                      <span>Manual captcha & OTP entry</span>
+                    </div>
+                  </div>
+                  
+                  <button className="w-full mt-4 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                    Choose RPA Bot
+                  </button>
+                </div>
+              </div>
+
+              {/* Extension Option */}
+              <div className="border-2 border-purple-200 rounded-xl p-6 hover:border-purple-400 transition-all cursor-pointer group"
+                   onClick={() => handleMethodSelection('extension')}>
+                <div className="text-center">
+                  <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-purple-200">
+                    <span className="text-2xl">🧩</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Browser Extension</h3>
+                  <p className="text-gray-600 text-sm mb-4">
+                    Traditional extension-based automation in new tab
+                  </p>
+                  
+                  <div className="space-y-2 text-left">
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Fast and reliable</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <CheckCircle className="w-4 h-4" />
+                      <span>Works on any device</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-orange-600">
+                      <span className="w-4 h-4 text-center">⚠️</span>
+                      <span>Extension installation required</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-orange-600">
+                      <span className="w-4 h-4 text-center">⚠️</span>
+                      <span>Opens in new tab</span>
+                    </div>
+                  </div>
+                  
+                  <button className="w-full mt-4 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700 transition-colors">
+                    Choose Extension
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-800 text-center">
+                <strong>Recommendation:</strong> Choose RPA Bot for the best experience - no extension needed and complete browser control!
               </p>
-            </div>
-
-            {/* RPA Status Banner */}
-            <div className="bg-blue-100 border border-blue-300 rounded-lg p-3 mb-4 flex items-center gap-3">
-              <div className="animate-spin w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full"></div>
-              <span className="text-blue-800 font-medium">RPA Bot is filling the form automatically...</span>
-            </div>
-
-            {/* iframe Container */}
-            <div className="border-4 border-blue-500 rounded-xl overflow-hidden shadow-2xl">
-              <iframe
-                src={iframeUrl}
-                className="w-full h-[600px]"
-                title="RPA Demo Portal"
-                onLoad={(e) => {
-                  // Auto-advance to success page after form submission (detect success page)
-                  try {
-                    const iframeDoc = e.target.contentWindow.document;
-                    const isSuccessPage = iframeDoc.body.innerHTML.includes('Application Submitted');
-                    if (isSuccessPage) {
-                      setTimeout(() => setStep(4), 3000); // Wait 3 seconds to show success, then go to step 4
-                    }
-                  } catch (err) {
-                    // Cross-origin error - use timer fallback
-                    setTimeout(() => {
-                      // Auto-advance after 12 seconds (enough time for RPA to complete)
-                      setStep(4);
-                    }, 12000);
-                  }
-                }}
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4 justify-center mt-6">
-              <button
-                onClick={() => setStep(4)}
-                className="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-              >
-                ✅ Done - View Summary
-              </button>
-              <button
-                onClick={() => setStep(2)}
-                className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                ← Back to Form
-              </button>
             </div>
           </div>
         )}
 
-        {/* Step 4: Success */}
-        {step === 4 && (
+        {/* Step 4: RPA Automation Controller */}
+        {step === 4 && automationMethod === 'rpa' && (
+          <div>
+            <h2 className="text-xl font-bold text-gray-800 mb-4 text-center">
+              🤖 RPA Automation in Progress
+            </h2>
+            
+            <RPAController 
+              formData={{
+                mobile: formData.mobile,
+                provider: selectedSupplier.name,
+                new_name: formData.new_name,
+                reason: formData.reason,
+                security_deposit_option: formData.security_deposit_option,
+                old_security_deposit: formData.old_security_deposit,
+                applicant_name: formData.applicant_name,
+                email: formData.email
+              }}
+              onComplete={handleRPAComplete}
+              onError={handleRPAError}
+            />
+          </div>
+        )}
+
+        {/* Step 5: Success */}
+        {step === 5 && (
           <div className="text-center py-8">
             <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
               <CheckCircle className="w-12 h-12 text-green-600" />
