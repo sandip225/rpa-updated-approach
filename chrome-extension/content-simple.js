@@ -31,6 +31,10 @@ function runExtension() {
   else if (url.includes('ltNameChange.php') || url.includes('LTNameChange') || url.includes('namechange')) {
     setTimeout(handleNameChangeFormPage, 2000);
   }
+  // STEP 6: Any other DGVCL page - General auto-submit functionality
+  else if (url.includes('guvnl.in')) {
+    setTimeout(handleGeneralPage, 1000);
+  }
 }
 
 // ============ STEP 1: LOGIN PAGE ============
@@ -360,21 +364,73 @@ function handleNameChangeFormPage() {
       
       // Auto-click Submit button after filling form
       setTimeout(() => {
+        console.log('🔍 Looking for Submit button...');
+        
+        // Try multiple selectors for Submit button
         const submitBtn = document.querySelector('input[value="Submit"]') ||
+                         document.querySelector('input[value="SUBMIT"]') ||
                          document.querySelector('button[type="submit"]') ||
                          document.querySelector('input[type="submit"]') ||
                          document.querySelector('button:contains("Submit")') ||
                          document.querySelector('.btn-submit') ||
-                         document.querySelector('[onclick*="submit"]');
+                         document.querySelector('[onclick*="submit"]') ||
+                         document.querySelector('[onclick*="Submit"]') ||
+                         // Additional selectors for DGVCL specific buttons
+                         document.querySelector('input[name="submit"]') ||
+                         document.querySelector('input[id*="submit"]') ||
+                         document.querySelector('button[name*="submit"]');
         
         if (submitBtn) {
-          console.log('✅ Found Submit button, auto-clicking...');
+          console.log('✅ Found Submit button:', submitBtn);
+          console.log('✅ Button details - Type:', submitBtn.type, 'Value:', submitBtn.value, 'Text:', submitBtn.textContent);
           showMsg('🤖 Auto-submitting Name Change form...', 'blue');
-          submitBtn.click();
+          
+          // Scroll to button to ensure it's visible
+          submitBtn.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Highlight the button before clicking
+          submitBtn.style.background = '#e74c3c';
+          submitBtn.style.border = '3px solid #c0392b';
+          submitBtn.style.color = 'white';
+          
+          // Click after a short delay
+          setTimeout(() => {
+            submitBtn.click();
+            console.log('✅ Submit button clicked!');
+          }, 1000);
+          
         } else {
           console.log('❌ Submit button not found');
-          console.log('Available buttons:', document.querySelectorAll('button, input[type="submit"], input[type="button"]'));
-          showMsg('⚠️ Submit button not found\n👉 Please submit manually', 'orange');
+          console.log('🔍 Available buttons and inputs:');
+          document.querySelectorAll('button, input[type="submit"], input[type="button"]').forEach((btn, index) => {
+            console.log(`Button ${index}:`, {
+              tag: btn.tagName,
+              type: btn.type,
+              value: btn.value,
+              text: btn.textContent,
+              name: btn.name,
+              id: btn.id,
+              onclick: btn.onclick
+            });
+          });
+          
+          // Try to find any button with "Submit" in text or value
+          const allButtons = document.querySelectorAll('button, input[type="submit"], input[type="button"], input[value*="ubmit"]');
+          let foundSubmit = false;
+          
+          allButtons.forEach(btn => {
+            const text = (btn.textContent || btn.value || '').toLowerCase();
+            if (text.includes('submit') && !foundSubmit) {
+              console.log('✅ Found Submit button by text search:', btn);
+              showMsg('🤖 Auto-submitting form (fallback)...', 'blue');
+              btn.click();
+              foundSubmit = true;
+            }
+          });
+          
+          if (!foundSubmit) {
+            showMsg('⚠️ Submit button not found\n👉 Please submit manually', 'orange');
+          }
         }
       }, 2000); // Wait 2 seconds after filling form
       
@@ -387,6 +443,49 @@ function handleNameChangeFormPage() {
     }
     
   }, 1500);
+}
+
+// ============ STEP 6: GENERAL PAGE HANDLER ============
+function handleGeneralPage() {
+  console.log('🔍 General DGVCL page detected, checking for auto-submit opportunities...');
+  
+  // Check if there's any form data in localStorage
+  let storedData = localStorage.getItem('dgvcl_name_change_data') || localStorage.getItem('dgvcl_autofill_data');
+  if (!storedData) {
+    console.log('❌ No stored data found for auto-submit');
+    return;
+  }
+  
+  // Look for Submit buttons that might need auto-clicking
+  setTimeout(() => {
+    const submitButtons = document.querySelectorAll('input[value*="Submit"], input[value*="SUBMIT"], button[type="submit"], input[type="submit"]');
+    
+    if (submitButtons.length > 0) {
+      console.log(`🔍 Found ${submitButtons.length} submit button(s) on page`);
+      
+      // Check if any forms are filled (indicating user interaction)
+      const filledInputs = Array.from(document.querySelectorAll('input[type="text"], input[type="email"], select')).filter(input => input.value.trim() !== '');
+      
+      if (filledInputs.length > 0) {
+        console.log(`✅ Found ${filledInputs.length} filled input(s), enabling auto-submit`);
+        
+        submitButtons.forEach((btn, index) => {
+          // Add visual indicator and click handler
+          btn.style.border = '2px solid #e74c3c';
+          btn.style.boxShadow = '0 0 10px rgba(231, 76, 60, 0.5)';
+          
+          // Auto-click after a delay if it's the primary submit button
+          if (index === 0) {
+            setTimeout(() => {
+              console.log('🤖 Auto-clicking submit button...');
+              showMsg('🤖 Auto-submitting form...', 'blue');
+              btn.click();
+            }, 3000);
+          }
+        });
+      }
+    }
+  }, 2000);
 }
 
 // ============ HELPER FUNCTIONS ============
