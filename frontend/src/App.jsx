@@ -11,9 +11,27 @@ import Applications from './pages/Applications';
 import GuidedFlow from './pages/GuidedFlow';
 import NameChangeForm from './pages/NameChangeForm';
 import TestRPA from './pages/TestRPA';
+import SupplierVerification from './pages/SupplierVerification';
 import OfflineIndicator from './components/OfflineIndicator';
 import InstallPWA from './components/InstallPWA';
 import './registerSW';
+
+// Global error handler for undefined property errors
+window.addEventListener('error', (event) => {
+  if (event.message && event.message.includes('enddate')) {
+    console.warn('Caught enddate error:', event.message);
+    event.preventDefault();
+    return true;
+  }
+});
+
+// Unhandled promise rejection handler
+window.addEventListener('unhandledrejection', (event) => {
+  if (event.reason && event.reason.message && event.reason.message.includes('enddate')) {
+    console.warn('Caught enddate promise rejection:', event.reason.message);
+    event.preventDefault();
+  }
+});
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -62,6 +80,7 @@ function App() {
             <Route path="property" element={<NameChangeForm />} />
             <Route path="new-connection" element={<NewConnectionForm />} />
             <Route path="test-rpa" element={<TestRPA />} />
+            <Route path="supplier-verification" element={<SupplierVerification />} />
           </Route>
         </Routes>
       </BrowserRouter>
