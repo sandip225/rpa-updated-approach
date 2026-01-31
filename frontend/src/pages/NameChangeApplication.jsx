@@ -3,9 +3,8 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { 
   Zap, Flame, Droplets, Building, ArrowLeft, Upload, 
   User, Phone, Mail, MapPin, FileText, Calendar,
-  AlertCircle, CheckCircle, Info, Bot, Sparkles
+  AlertCircle, CheckCircle, Info, Sparkles
 } from 'lucide-react';
-import AIAutomationIframe from '../components/AIAutomationIframe';
 
 const NameChangeApplication = () => {
   const { serviceType } = useParams();
@@ -49,8 +48,6 @@ const NameChangeApplication = () => {
 
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
-  const [showAIAutomation, setShowAIAutomation] = useState(false);
-  const [automationResult, setAutomationResult] = useState(null);
 
   const serviceConfig = {
     electricity: {
@@ -136,7 +133,6 @@ const NameChangeApplication = () => {
       documents: [], // No documents required for online application
       processingTime: '5-10 days',
       fees: 'Rs. 100 + taxes',
-      aiSupported: true,
       portalUrl: 'https://connect.torrentpower.com/tplcp/application/namechangerequest'
     },
     
@@ -266,13 +262,7 @@ const NameChangeApplication = () => {
       return;
     }
 
-    // Check if AI automation is supported for this provider
-    if (provider.aiSupported) {
-      setShowAIAutomation(true);
-      return;
-    }
-
-    // Fallback to traditional submission
+    // Traditional submission for all providers
     setLoading(true);
     
     try {
@@ -288,47 +278,6 @@ const NameChangeApplication = () => {
       alert('Error submitting application. Please try again.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleAIAutomationComplete = (result) => {
-    setAutomationResult(result);
-    console.log('Browser-use AI Automation completed:', result);
-    
-    // Show success message
-    if (result.success) {
-      alert(`✅ AI Automation Completed!\n\n${result.message}\n\nNext Steps:\n${result.next_steps?.join('\n') || 'Complete the form manually in the browser window.'}`);
-    } else {
-      alert(`❌ AI Automation Failed!\n\n${result.error || result.message}`);
-    }
-  };
-
-  const handleCloseAIAutomation = () => {
-    setShowAIAutomation(false);
-  };
-
-  const prepareUserDataForAI = () => {
-    if (providerId === 'torrent-power') {
-      // Torrent Power specific data
-      return {
-        city: formData.city,
-        service_number: formData.serviceNumber,
-        t_number: formData.tNumber,
-        mobile: formData.mobile,
-        email: formData.email,
-        confirm_email: formData.confirmEmail
-      };
-    } else {
-      // Original data for other providers
-      return {
-        connection_id: formData.connectionNumber || formData.customerID,
-        current_name: formData.currentName,
-        new_name: formData.newName,
-        mobile: formData.mobile,
-        email: formData.email,
-        address: formData.address,
-        reason: 'Name correction as per documents'
-      };
     }
   };
 
@@ -609,34 +558,15 @@ const NameChangeApplication = () => {
           </Link>
           
           <div className="flex items-center gap-4">
-            {provider.aiSupported && (
-              <div className="flex items-center gap-2 text-sm text-purple-600 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-3 rounded-lg border border-purple-200">
-                <Bot className="w-5 h-5" />
-                <span className="font-medium">Browser-use AI Auto-fill Supported</span>
-                <Sparkles className="w-5 h-5" />
-                <span className="text-xs text-purple-500 ml-2">Visible automation process</span>
-              </div>
-            )}
-            
             <button
               type="submit"
               disabled={loading}
-              className={`px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 ${
-                provider.aiSupported 
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700' 
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
+              className="px-8 py-3 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 bg-blue-600 text-white hover:bg-blue-700"
             >
               {loading ? (
                 <>
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                   Submitting...
-                </>
-              ) : provider.aiSupported ? (
-                <>
-                  <Bot className="w-5 h-5" />
-                  Start AI Auto-fill in Website
-                  <span className="text-xs opacity-75 ml-1">(Live Automation)</span>
                 </>
               ) : (
                 <>
@@ -648,17 +578,6 @@ const NameChangeApplication = () => {
           </div>
         </div>
       </form>
-
-      {/* AI Automation Modal */}
-      {showAIAutomation && (
-        <AIAutomationIframe
-          provider={provider.name}
-          userData={prepareUserDataForAI()}
-          portalUrl={provider.portalUrl}
-          onAutomationComplete={handleAIAutomationComplete}
-          onClose={handleCloseAIAutomation}
-        />
-      )}
     </div>
   );
 };
