@@ -19,10 +19,6 @@ fake-useragent==1.4.0
 email-validator==2.1.0
 httpx==0.25.0
 
-# Browser-use AI automation dependencies - Official GitHub repo integration
-browser-use>=0.11.5
-playwright>=1.40.0
-langchain-openai>=0.1.0
-python-dotenv>=1.0.0
-langchain>=0.1.0
-langchain-community>=0.0.20
+# Browser-use AI automation dependencies - Simplified for production
+playwright==1.40.0
+python-dotenv==1.0.0
