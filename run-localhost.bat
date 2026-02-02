@@ -1,0 +1,45 @@
+@echo off
+echo 🚀 LOCALHOST DEVELOPMENT - Torrent Power Automation
+echo ==================================================
+
+echo 🛑 Stopping existing containers...
+docker compose down 2>nul
+
+echo 🔨 Building services for localhost...
+docker compose up --build -d
+
+echo ⏳ Waiting for services to start...
+timeout /t 30 /nobreak >nul
+
+echo 📊 Container status:
+docker compose ps
+
+echo 🧪 Testing backend...
+curl -s http://localhost:8000/health >nul && echo ✅ Backend ready! || echo ⚠️ Backend starting...
+
+echo 🤖 Testing automation service...
+curl -s http://localhost:8000/torrent-automation/test-connection | findstr "success" >nul && echo ✅ Automation ready! || echo ⚠️ Automation loading...
+
+echo.
+echo 🎉 LOCALHOST DEVELOPMENT READY!
+echo ===============================
+echo 🌐 Local URLs:
+echo    - Frontend: http://localhost:3000
+echo    - Backend API: http://localhost:8000
+echo    - API Docs: http://localhost:8000/docs
+echo    - Automation Test: http://localhost:8000/torrent-automation/test-connection
+echo.
+echo 🤖 TORRENT POWER AUTOMATION:
+echo 1. Open: http://localhost:3000
+echo 2. Register/Login
+echo 3. Go to: Services → Electricity → Name Change
+echo 4. Select: Torrent Power
+echo 5. Fill form and click 'Start AI Auto-fill'
+echo 6. 🎉 Watch automation work!
+echo.
+echo 🔧 Development Commands:
+echo    - View logs: docker compose logs -f
+echo    - Restart: docker compose restart
+echo    - Stop: docker compose down
+
+pause

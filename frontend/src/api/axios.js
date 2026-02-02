@@ -1,8 +1,18 @@
 import axios from 'axios';
 
-// Force use direct backend port for EC2 deployment
+// Dynamic API base URL - works for both localhost and production
+const getApiBaseUrl = () => {
+  // Check if we're in development (localhost)
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:8000/api';
+  }
+  
+  // Production EC2 URL
+  return 'http://50.19.189.29:8000/api';
+};
+
 const api = axios.create({
-  baseURL: 'http://50.19.189.29:8000/api',
+  baseURL: getApiBaseUrl(),
   headers: {
     'Content-Type': 'application/json',
   },
