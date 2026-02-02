@@ -275,6 +275,132 @@ async def get_supported_fields():
     }
 
 
+@router.post("/start-visible-automation", response_model=TorrentAutomationResponse)
+async def start_visible_torrent_power_rpa_automation(
+    request: TorrentAutomationRequest
+    # current_user: User = Depends(get_current_user)  # Temporarily disabled for testing
+):
+    """
+    Start the RPA-based Torrent Power automation with VISIBLE browser for debugging
+    Shows the automation process in real-time with visual feedback
+    """
+    
+    try:
+        print("🤖 VISIBLE RPA Torrent Power automation request received")
+        print(f"📋 Request data: {request.dict()}")
+        
+        # Validate required fields (same as regular automation)
+        if not request.service_number or request.service_number.strip() == "":
+            raise HTTPException(
+                status_code=400,
+                detail="Service Number is required for Torrent Power automation"
+            )
+        
+        if not request.t_number or request.t_number.strip() == "":
+            raise HTTPException(
+                status_code=400,
+                detail="Transaction Number (T No) is required for Torrent Power automation"
+            )
+        
+        if not request.mobile or len(request.mobile.strip()) < 10:
+            raise HTTPException(
+                status_code=400,
+                detail="Valid mobile number is required (at least 10 digits)"
+            )
+        
+        if not request.email or request.email.strip() == "":
+            raise HTTPException(
+                status_code=400,
+                detail="Email address is required for Torrent Power automation"
+            )
+        
+        print("✅ All validations passed, starting VISIBLE RPA automation...")
+        
+        try:
+            from app.services.torrent_rpa_service import TorrentPowerRPA
+            
+            # Prepare the data for RPA
+            rpa_data = {
+                "city": request.city or 'Ahmedabad',
+                "service_number": request.service_number,
+                "t_number": request.t_number,
+                "mobile": request.mobile,
+                "email": request.email
+            }
+            
+            print(f"📋 Visible RPA Data: {rpa_data}")
+            
+            # Initialize and run VISIBLE RPA
+            rpa = TorrentPowerRPA()
+            result = rpa.run_visible_automation(rpa_data)
+            
+            print(f"📊 Visible RPA Result: {result}")
+            
+            if result.get("success"):
+                return TorrentAutomationResponse(
+                    success=True,
+                    message=f"🤖 VISIBLE RPA successfully filled {result.get('total_filled', 0)} fields! Browser kept open for debugging.",
+                    details="Visible RPA automation completed successfully - you can see the process!",
+                    timestamp=datetime.now().isoformat(),
+                    fields_filled=result.get("total_filled", 0),
+                    total_fields=5,
+                    next_steps=[
+                        "✅ VISIBLE RPA automation completed successfully",
+                        "👀 Browser opened with visible automation process",
+                        "🎬 Watch the form being filled step by step",
+                        "📝 Form fields filled and highlighted in green",
+                        "🔍 Review the filled data for accuracy",
+                        "📤 Click Submit to complete your application",
+                        "🕐 Browser will stay open for 10 minutes for debugging"
+                    ],
+                    automation_details=result.get("filled_fields", []),
+                    screenshots=result.get("screenshots", [])
+                )
+            else:
+                return TorrentAutomationResponse(
+                    success=False,
+                    message="Visible RPA automation encountered an error.",
+                    details=result.get("error", "Unknown visible RPA error"),
+                    timestamp=datetime.now().isoformat(),
+                    error=result.get("error", "Visible RPA automation failed"),
+                    automation_details=result.get("filled_fields", [])
+                )
+                
+        except ImportError as e:
+            print(f"❌ Visible RPA import error: {e}")
+            return TorrentAutomationResponse(
+                success=False,
+                message="Visible RPA service not available. Selenium WebDriver required.",
+                details="Please install Selenium and ChromeDriver for visible RPA automation.",
+                timestamp=datetime.now().isoformat(),
+                error="Visible RPA service not available. Selenium WebDriver required."
+            )
+        except Exception as e:
+            print(f"❌ Visible RPA automation error: {e}")
+            return TorrentAutomationResponse(
+                success=False,
+                message="Visible RPA automation service unavailable.",
+                details=str(e),
+                timestamp=datetime.now().isoformat(),
+                error=f"Visible RPA automation failed: {str(e)}"
+            )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"❌ Visible Torrent RPA automation API error: {str(e)}")
+        import traceback
+        print(f"❌ Full traceback: {traceback.format_exc()}")
+        
+        return TorrentAutomationResponse(
+            success=False,
+            message=f"Failed to start visible Torrent Power RPA automation: {str(e)}",
+            timestamp=datetime.now().isoformat(),
+            error=str(e),
+            details=traceback.format_exc()
+        )
+
+
 @router.post("/test-rpa")
 async def test_rpa_with_sample_data():
     """
