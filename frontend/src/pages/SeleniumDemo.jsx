@@ -9,6 +9,50 @@ const SeleniumDemo = () => {
   const [formData, setFormData] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const [taskStatus, setTaskStatus] = useState(null);
+  const [visibleModalOpen, setVisibleModalOpen] = useState(false);
+  const [visibleStatus, setVisibleStatus] = useState('Idle');
+  const [visibleResult, setVisibleResult] = useState(null);
+  const [visibleError, setVisibleError] = useState(null);
+
+  const startVisibleDemo = async () => {
+    if (!selectedService) { alert('Please select a service'); return; }
+    setIsLoading(true);
+    setVisibleModalOpen(true);
+    setVisibleStatus('Starting visible automation...');
+    setVisibleResult(null);
+    setVisibleError(null);
+
+    try {
+      const response = await fetch('/api/torrent-automation/start-visible-automation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          city: formData.city || 'Ahmedabad',
+          service_number: formData.service_number || formData.serviceNumber || '',
+          t_number: formData.t_number || formData.tNumber || '',
+          mobile: formData.mobile || formData.mobileNumber || '',
+          email: formData.email || formData.emailAddress || '',
+          options: { interactive: true, pause_between: 1, keep_open: 600 }
+        })
+      });
+
+      setVisibleStatus('Running... waiting for response');
+      const result = await response.json();
+      if (response.ok) {
+        setVisibleStatus(result.success ? 'Completed' : 'Failed');
+        setVisibleResult(result);
+      } else {
+        setVisibleStatus('Failed');
+        setVisibleError(result.detail || result.error || 'Unknown error');
+      }
+    } catch (err) {
+      console.error(err);
+      setVisibleStatus('Error');
+      setVisibleError(String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchSupportedServices();
@@ -261,13 +305,21 @@ const SeleniumDemo = () => {
                 ))}
               </div>
               
-              <button
-                onClick={startAutomation}
-                disabled={isLoading}
-                className="mt-4 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
-              >
-                {isLoading ? '🔄 Starting...' : '🚀 Start Automation'}
-              </button>
+              <div className="flex gap-3 mt-4">
+                <button
+                  onClick={startAutomation}
+                  disabled={isLoading}
+                  className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors disabled:opacity-50"
+                >
+                  {isLoading ? '🔄 Starting...' : '🚀 Start Automation'}
+                </button>
+                <button
+                  onClick={startVisibleDemo}
+                  className="bg-orange-500 hover:bg-orange-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors"
+                >
+                  👀 Visible Demo
+                </button>
+              </div>
             </div>
           )}
 
@@ -343,6 +395,58 @@ const SeleniumDemo = () => {
             )}
           </div>
         </div>
+
+          {/* Visible RPA Modal */}
+          {visibleModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+              <div className="bg-white rounded-lg w-11/12 max-w-2xl p-6">
+                <div className="flex items-start justify-between">
+                  <h3 className="text-xl font-semibold">Visible RPA Progress</h3>
+                  <button onClick={() => setVisibleModalOpen(false)} className="text-gray-500 hover:text-gray-700">Close</button>
+                </div>
+                <div className="mt-4">
+                  <p className="text-sm text-gray-600 mb-2">Status: <strong>{visibleStatus}</strong></p>
+
+                  {isLoading && (
+                    <div className="flex items-center gap-3">
+                      <div className="loader-border w-6 h-6 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                      <p>Starting visible automation — check the opened browser.</p>
+                    </div>
+                  )}
+
+                  {visibleError && (
+                    <div className="mt-3 text-sm text-red-600">Error: {visibleError}</div>
+                  )}
+
+                  {visibleResult && (
+                    <div className="mt-3">
+                      <div className="text-sm text-gray-700 mb-2">Message: {visibleResult.message}</div>
+                      {visibleResult.automation_details && visibleResult.automation_details.length > 0 && (
+                        <div className="mb-2">
+                          <div className="font-medium">Details:</div>
+                          <ul className="list-disc list-inside text-sm text-gray-700">
+                            {visibleResult.automation_details.map((d, i) => <li key={i}>{d}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                      {visibleResult.screenshots && visibleResult.screenshots.length > 0 && (
+                        <div className="mt-2">
+                          <div className="font-medium">Screenshots (saved on backend):</div>
+                          <ul className="list-disc list-inside text-sm text-gray-700">
+                            {visibleResult.screenshots.map((s, i) => <li key={i}>{s}</li>)}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                </div>
+                <div className="mt-4 flex justify-end">
+                  <button onClick={() => setVisibleModalOpen(false)} className="bg-gray-200 px-4 py-2 rounded-md">Close</button>
+                </div>
+              </div>
+            </div>
+          )}
 
         {/* Selenium Information */}
         <div className="bg-white rounded-lg shadow-lg p-6">

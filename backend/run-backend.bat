@@ -16,4 +16,4 @@ echo ⚠️ Keep this window open while developing
 echo 📝 Press Ctrl+C to stop the server
 echo.
 
-uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+uvicorn --app-dir backend app.main:app --host 0.0.0.0 --port 8000 --reload

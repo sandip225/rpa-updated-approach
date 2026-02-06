@@ -29,10 +29,15 @@ class TorrentPowerRPA:
         try:
             chrome_options = Options()
             
-            # Check if running in Docker/EC2 environment
+            # Check if running in Docker/EC2 environment (cross-platform)
+            import platform
             is_docker = os.path.exists('/.dockerenv')
-            is_ec2 = os.path.exists('/opt/aws') or 'ec2' in os.uname().nodename.lower()
-            
+            try:
+                node_name = platform.uname().nodename or platform.node()
+            except Exception:
+                node_name = ''
+            is_ec2 = os.path.exists('/opt/aws') or ('ec2' in node_name.lower())
+
             logger.info(f"🔍 Environment detection - Docker: {is_docker}, EC2: {is_ec2}")
             
             if is_docker or is_ec2:
@@ -506,12 +511,13 @@ class TorrentPowerRPA:
             if not self.navigate_to_torrent_power():
                 return {"success": False, "error": "Failed to navigate to Torrent Power website"}
             
-            # Fill form
-            result = self.fill_form(form_data)
-            
+            # Fill form (pass options)
+            result = self.fill_form(form_data, options=options)
+
             if result["success"] and keep_open:
+                keep_time = options.get('keep_open', 300) if options else 300
                 # Keep browser open for user interaction
-                self.keep_browser_open(300)  # 5 minutes
+                self.keep_browser_open(keep_time)  # configurable
             
             return result
             
@@ -522,7 +528,7 @@ class TorrentPowerRPA:
             if not keep_open:
                 self.close_driver()
 
-    def run_visible_automation(self, form_data):
+    def run_visible_automation(self, form_data, options=None):
         """Run automation with visible browser for debugging"""
         try:
             logger.info("🚀 Starting VISIBLE Torrent Power RPA Automation...")
@@ -564,11 +570,12 @@ class TorrentPowerRPA:
                 return {"success": False, "error": "Failed to navigate to Torrent Power website"}
             
             # Fill form with slower pace for visibility
-            result = self.fill_form_visible(form_data)
+            result = self.fill_form_visible(form_data, options=options)
             
             # Keep browser open longer for debugging
-            logger.info("🕐 Keeping visible browser open for 10 minutes for debugging...")
-            time.sleep(600)  # 10 minutes
+            keep_time = options.get('keep_open', 600) if options else 600
+            logger.info(f"🕐 Keeping visible browser open for {keep_time} seconds for debugging...")
+            time.sleep(keep_time)  # configurable
             
             return result
             
@@ -599,6 +606,58 @@ class TorrentPowerRPA:
             """
             self.driver.execute_script(banner_script)
             time.sleep(2)  # Let user see the banner
+
+            # Options for interactive visible run
+            interactive = options.get('interactive', False) if options else False
+            pause_between = options.get('pause_between', 1) if options else 1
+
+            # Create interactive control (Next / Auto) if interactive mode requested
+            if interactive:
+                control_js = """
+                if (!window.__rpa_control_created) {
+                    const ctrl = document.createElement('div');
+                    ctrl.id = '__rpa_control__';
+                    ctrl.style.position = 'fixed';
+                    ctrl.style.top = '70px';
+                    ctrl.style.right = '20px';
+                    ctrl.style.zIndex = 999999;
+                    ctrl.innerHTML = `<div style="background:#fff;padding:10px;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.15);font-family:Arial,sans-serif;"><button id='__rpa_next__' style='padding:6px 10px;margin-right:6px;'>Next</button><button id='__rpa_auto__' style='padding:6px 10px;'>Auto</button></div>`;
+                    document.body.appendChild(ctrl);
+                    window.__rpa_control_created = true;
+                    window.__rpa_next_clicked = false;
+                    window.__rpa_auto = false;
+                    document.getElementById('__rpa_next__').addEventListener('click', () => { window.__rpa_next_clicked = true; });
+                    document.getElementById('__rpa_auto__').addEventListener('click', () => { window.__rpa_auto = true; });
+                }
+                """
+                try:
+                    self.driver.execute_script(control_js)
+                except Exception:
+                    logger.debug('Could not create interactive control in page')
+
+            # Helper: waits for interactive click or auto mode
+            def wait_for_next():
+                if not interactive:
+                    return
+                logger.info('⏸️ Waiting for user to click Next (interactive mode) or Auto to be enabled...')
+                start = time.time()
+                while True:
+                    try:
+                        auto = self.driver.execute_script('return window.__rpa_auto === true')
+                        if auto:
+                            logger.info('▶️ Auto mode enabled by user; continuing')
+                            return
+                        clicked = self.driver.execute_script('return window.__rpa_next_clicked === true')
+                        if clicked:
+                            # reset for next step
+                            self.driver.execute_script('window.__rpa_next_clicked = false')
+                            return
+                    except Exception:
+                        pass
+                    time.sleep(0.2)
+                    if time.time() - start > 600:
+                        logger.info('⏳ Interactive wait timed out; continuing')
+                        return
             
             # 1. Fill City Dropdown (with visual feedback)
             try:
@@ -636,22 +695,151 @@ class TorrentPowerRPA:
                 options = select.options
                 for option in options:
                     if city.lower() in option.text.lower() or city.lower() in option.get_attribute('value').lower():
-                        select.select_by_value(option.get_attribute('value'))
+                        value = option.get_attribute('value')
+                        # Use JS to set value and dispatch change event for reliability
+                        self.driver.execute_script("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('change', {bubbles:true}));", city_select, value)
                         filled_fields.append(f"✅ City: {option.text}")
                         logger.info(f"✅ [VISIBLE] City selected: {option.text}")
-                        
+
                         # Highlight success
                         self.driver.execute_script("arguments[0].style.backgroundColor = '#d4edda'; arguments[0].style.border = '3px solid #28a745';", city_select)
                         break
-                
-                time.sleep(2)  # Slower pace for visibility
+
+                # interactive and pause
+                wait_for_next()
+                time.sleep(pause_between)  # Slower pace for visibility
                 
             except Exception as e:
                 logger.error(f"❌ [VISIBLE] City dropdown error: {e}")
                 filled_fields.append("❌ City dropdown not found")
             
-            # Continue with other fields using similar visible approach...
-            # (I'll implement the rest similarly but keeping response concise)
+            # 2. Fill Service Number (visible)
+            try:
+                logger.info("🔍 [VISIBLE] Looking for service number input...")
+                service_input = None
+                try:
+                    service_input = self.wait.until(EC.presence_of_element_located((By.ID, "serviceno")))
+                except Exception:
+                    pass
+                if not service_input:
+                    selectors = [
+                        "input[placeholder*='Service Number']",
+                        "input[placeholder*='Service']",
+                        "input[name*='service']",
+                        "input[id*='service']"
+                    ]
+                    for sel in selectors:
+                        try:
+                            service_input = self.driver.find_element(By.CSS_SELECTOR, sel)
+                            break
+                        except Exception:
+                            continue
+                if service_input and form_data.get('service_number'):
+                    # Use JS to set value and dispatch events for robustness
+                    self.driver.execute_script("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input',{bubbles:true})); arguments[0].dispatchEvent(new Event('change',{bubbles:true}));", service_input, form_data['service_number'])
+                    filled_fields.append(f"✅ Service Number: {form_data['service_number']}")
+                    logger.info(f"✅ [VISIBLE] Service Number filled: {form_data['service_number']}")
+                    self.driver.execute_script("arguments[0].style.backgroundColor = '#d4edda'; arguments[0].style.border = '3px solid #28a745';", service_input)
+                else:
+                    filled_fields.append("❌ Service Number field not found")
+                # interactive and pause
+                wait_for_next()
+                time.sleep(pause_between)
+            except Exception as e:
+                logger.error(f"❌ [VISIBLE] Service Number error: {e}")
+                filled_fields.append("❌ Service Number error")
+            
+            # 3. Fill T Number (visible)
+            try:
+                logger.info("🔍 [VISIBLE] Looking for T Number input...")
+                t_input = None
+                try:
+                    t_input = self.wait.until(EC.presence_of_element_located((By.ID, "tno")))
+                except Exception:
+                    pass
+                if not t_input:
+                    selectors = ["input[placeholder*='T No']", "input[name*='tno']", "input[id*='tno']"]
+                    for sel in selectors:
+                        try:
+                            t_input = self.driver.find_element(By.CSS_SELECTOR, sel)
+                            break
+                        except Exception:
+                            continue
+                if t_input and form_data.get('t_number'):
+                    self.driver.execute_script("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input',{bubbles:true})); arguments[0].dispatchEvent(new Event('change',{bubbles:true}));", t_input, form_data['t_number'])
+                    filled_fields.append(f"✅ T Number: {form_data['t_number']}")
+                    logger.info(f"✅ [VISIBLE] T Number filled: {form_data['t_number']}")
+                    self.driver.execute_script("arguments[0].style.backgroundColor = '#d4edda'; arguments[0].style.border = '3px solid #28a745';", t_input)
+                else:
+                    filled_fields.append("❌ T Number field not found")
+                wait_for_next()
+                time.sleep(pause_between)
+            except Exception as e:
+                logger.error(f"❌ [VISIBLE] T Number error: {e}")
+                filled_fields.append("❌ T Number error")
+            
+            # 4. Fill Mobile Number (visible)
+            try:
+                logger.info("🔍 [VISIBLE] Looking for mobile number input...")
+                mobile_input = None
+                try:
+                    mobile_input = self.wait.until(EC.presence_of_element_located((By.ID, "mobileno")))
+                except Exception:
+                    pass
+                if not mobile_input:
+                    selectors = [
+                        "input[type='tel']",
+                        "input[placeholder*='Mobile']",
+                        "input[name*='mobile']",
+                        "input[id*='mobile']"
+                    ]
+                    for sel in selectors:
+                        try:
+                            mobile_input = self.driver.find_element(By.CSS_SELECTOR, sel)
+                            break
+                        except Exception:
+                            continue
+                if mobile_input and form_data.get('mobile'):
+                    self.driver.execute_script("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input',{bubbles:true})); arguments[0].dispatchEvent(new Event('change',{bubbles:true}));", mobile_input, form_data['mobile'])
+                    filled_fields.append(f"✅ Mobile: {form_data['mobile']}")
+                    logger.info(f"✅ [VISIBLE] Mobile filled: {form_data['mobile']}")
+                    self.driver.execute_script("arguments[0].style.backgroundColor = '#d4edda'; arguments[0].style.border = '3px solid #28a745';", mobile_input)
+                else:
+                    filled_fields.append("❌ Mobile field not found")
+                wait_for_next()
+                time.sleep(pause_between)
+            except Exception as e:
+                logger.error(f"❌ [VISIBLE] Mobile error: {e}")
+                filled_fields.append("❌ Mobile error")
+            
+            # 5. Fill Email (visible)
+            try:
+                logger.info("🔍 [VISIBLE] Looking for email input...")
+                email_input = None
+                try:
+                    email_input = self.wait.until(EC.presence_of_element_located((By.ID, "email")))
+                except Exception:
+                    pass
+                if not email_input:
+                    selectors = ["input[type='email']", "input[placeholder*='Email']", "input[name*='email']", "input[id*='email']"]
+                    for sel in selectors:
+                        try:
+                            email_input = self.driver.find_element(By.CSS_SELECTOR, sel)
+                            break
+                        except Exception:
+                            continue
+                if email_input and form_data.get('email'):
+                    self.driver.execute_script("arguments[0].value = arguments[1]; arguments[0].dispatchEvent(new Event('input',{bubbles:true})); arguments[0].dispatchEvent(new Event('change',{bubbles:true}));", email_input, form_data['email'])
+                    filled_fields.append(f"✅ Email: {form_data['email']}")
+                    logger.info(f"✅ [VISIBLE] Email filled: {form_data['email']}")
+                    self.driver.execute_script("arguments[0].style.backgroundColor = '#d4edda'; arguments[0].style.border = '3px solid #28a745';", email_input)
+                else:
+                    filled_fields.append("❌ Email field not found")
+                wait_for_next()
+                time.sleep(pause_between)
+            except Exception as e:
+                logger.error(f"❌ [VISIBLE] Email error: {e}")
+                filled_fields.append("❌ Email error")
             
             # Take final screenshot
             self.driver.save_screenshot("torrent_form_filled_visible.png")

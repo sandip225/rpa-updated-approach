@@ -1,10 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.database import engine, Base
-from app.routers import auth, users, services, applications, demo_government_simple as demo_government, services_api, whatsapp, documents, services_data, portal_redirect, torrent_power, torrent_automation, proxy
-from app.config import get_settings
+from .database import engine, Base
+from .routers import auth, users, services, applications, demo_government_simple as demo_government, services_api, whatsapp, documents, services_data, portal_redirect, torrent_power, torrent_automation, proxy
+from .config import get_settings
+import threading
+import logging
 
 settings = get_settings()
+logger = logging.getLogger(__name__)
 
 # Create database tables (only creates if they don't exist)
 Base.metadata.create_all(bind=engine)
@@ -23,6 +26,23 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Pre-warm Chrome on startup (in background)
+@app.on_event("startup")
+async def startup_event():
+    """Pre-warm Chrome for faster first automation"""
+    def prewarm():
+        try:
+            logger.info("🔥 Pre-warming Chrome in background...")
+            from prewarm_chrome import prewarm_chrome
+            prewarm_chrome()
+        except Exception as e:
+            logger.warning(f"⚠️ Chrome pre-warm failed (not critical): {e}")
+    
+    # Run in background thread so it doesn't block startup
+    thread = threading.Thread(target=prewarm, daemon=True)
+    thread.start()
+    logger.info("✅ Backend started - Chrome pre-warming in background")
 
 # Include routers
 app.include_router(auth.router)

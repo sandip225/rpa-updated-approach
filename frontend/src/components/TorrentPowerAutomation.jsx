@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bot, CheckCircle, AlertCircle, Play, ExternalLink } from 'lucide-react';
 import api from '../api/axios';
 
@@ -6,16 +6,69 @@ const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
   const [automationStatus, setAutomationStatus] = useState('idle'); // idle, running, completed, failed
   const [result, setResult] = useState(null);
   const [statusMessage, setStatusMessage] = useState('');
+  const [taskId, setTaskId] = useState(null);
+  const [progress, setProgress] = useState(0);
+  const [fieldsFilled, setFieldsFilled] = useState(0);
+  const [currentField, setCurrentField] = useState('');
+  const [pollingInterval, setPollingInterval] = useState(null);
+
+  // Poll for status updates
+  useEffect(() => {
+    if (!taskId) return;
+    
+    const interval = setInterval(async () => {
+      try {
+        const response = await api.get(`/torrent-automation/status/${taskId}`);
+        const data = response.data;
+        
+        console.log('📊 Status update:', data);
+        
+        setStatusMessage(data.message || 'Processing...');
+        setProgress(data.progress_percentage || 0);
+        setFieldsFilled(data.fields_filled || 0);
+        setCurrentField(data.current_field || '');
+
+        // Update automation status based on task status
+        if (data.status === 'completed') {
+          setAutomationStatus('completed');
+          setResult(data.result);
+          clearInterval(interval);
+          if (data.result && onComplete) {
+            onComplete(data.result);
+          }
+        } else if (data.status === 'failed') {
+          setAutomationStatus('failed');
+          setResult({ success: false, message: data.message, error: data.message });
+          clearInterval(interval);
+        } else if (data.status === 'progress') {
+          setAutomationStatus('running');
+        }
+      } catch (error) {
+        console.error('❌ Error polling status:', error);
+        if (error.response?.status === 404) {
+          setStatusMessage('❌ Task not found');
+          setAutomationStatus('failed');
+          clearInterval(interval);
+        }
+      }
+    }, 1000); // Poll every 1 second
+    
+    setPollingInterval(interval);
+    
+    return () => clearInterval(interval);
+  }, [taskId, onComplete]);
 
   const startAutomation = async () => {
     try {
       setAutomationStatus('running');
       setStatusMessage('🚀 Starting automation...');
+      setProgress(0);
+      setFieldsFilled(0);
 
-      // Debug: Log the userData to see what we're getting
-      console.log('🔍 Debug - userData received:', userData);
+      // Debug: Log the userData
+      console.log('🔍 userData:', userData);
 
-      // Prepare the request data with proper field mapping
+      // Prepare request data
       const requestData = {
         city: userData.city || 'Ahmedabad',
         service_number: userData.serviceNumber || userData.service_number || '',
@@ -25,50 +78,36 @@ const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
         confirm_email: userData.confirmEmail || userData.email || ''
       };
 
-      // Debug: Log the request data
-      console.log('📤 Debug - Request data being sent:', requestData);
+      console.log('📤 Sending:', requestData);
 
-      // Validate required fields before sending
+      // Validate required fields
       if (!requestData.service_number || !requestData.t_number || !requestData.mobile || !requestData.email) {
         throw new Error('Missing required fields: Service Number, T Number, Mobile, or Email');
       }
 
-      const response = await api.post('/torrent-automation/start-automation', requestData);
+      // Call async start endpoint
+      const response = await api.post('/torrent-automation/start-automation-async', requestData);
 
-      console.log('✅ Automation request sent successfully');
-      console.log('📥 Response received:', response.data);
+      console.log('✅ Async start response:', response.data);
 
-      const automationResult = response.data;
-
-      if (automationResult.success) {
-        setAutomationStatus('completed');
-        setStatusMessage('✅ Form auto-filled successfully!');
-        setResult(automationResult);
-        
-        if (onComplete) {
-          onComplete(automationResult);
-        }
+      if (response.data.success && response.data.task_id) {
+        setTaskId(response.data.task_id);
+        // Polling will start automatically via useEffect
       } else {
-        setAutomationStatus('failed');
-        setStatusMessage(`❌ Automation failed: ${automationResult.message}`);
-        setResult(automationResult);
+        throw new Error(response.data.message || 'Failed to start automation');
       }
 
     } catch (error) {
       console.error('❌ Automation error:', error);
       setAutomationStatus('failed');
       
-      // Show user-friendly error messages
-      let errorMessage = 'Failed to connect to automation service';
-      
+      let errorMessage = 'Failed to start automation';
       if (error.message && error.message.includes('Missing required fields')) {
         errorMessage = error.message;
       } else if (error.response?.status === 400) {
-        errorMessage = error.response?.data?.detail || 'Invalid request data. Please check your form inputs.';
-      } else if (error.response?.status === 401) {
-        errorMessage = 'Authentication required. Please login again.';
+        errorMessage = error.response?.data?.detail || 'Invalid request data';
       } else if (error.response?.status === 500) {
-        errorMessage = 'Server error. Please try again later.';
+        errorMessage = 'Server error';
       }
       
       setStatusMessage(`❌ ${errorMessage}`);
@@ -126,6 +165,27 @@ const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
         {/* Content */}
         <div className="p-6">
           
+          {/* Progress Bar */}
+          {automationStatus === 'running' && (
+            <div className="mb-4">
+              <div className="flex justify-between mb-2">
+                <span className="text-sm font-medium text-gray-700">Progress</span>
+                <span className="text-sm font-bold text-blue-600">{progress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2.5">
+                <div 
+                  className="bg-gradient-to-r from-blue-600 to-purple-600 h-2.5 rounded-full transition-all duration-500"
+                  style={{ width: `${progress}%` }}
+                ></div>
+              </div>
+              <div className="mt-2 text-center">
+                <span className="text-sm font-semibold text-gray-700">
+                  {fieldsFilled}/5 Fields Filled
+                </span>
+              </div>
+            </div>
+          )}
+          
           {/* Status Display */}
           <div className="mb-4">
             <div className={`p-4 rounded-lg border ${
@@ -151,29 +211,42 @@ const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
                   {statusMessage || 'Ready to start automation'}
                 </p>
               </div>
+              {currentField && automationStatus === 'running' && (
+                <p className="text-sm text-blue-700 mt-2">
+                  <strong>Currently filling:</strong> {currentField}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Results Display */}
           {result && result.success && (
             <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
-              <h3 className="font-semibold text-green-800 mb-2">🚀 Auto-fill Launcher Started!</h3>
+              <h3 className="font-semibold text-green-800 mb-2">✅ Form Auto-filled Successfully!</h3>
               <p className="text-sm text-green-700 mb-3">
-                The auto-fill launcher has been opened and will automatically fill the Torrent Power form!
+                Torrent Power form has been automatically filled with your data. Chrome browser opened and all available fields were filled.
               </p>
+              
+              {/* Show actual field count */}
+              <div className="mb-3 p-3 bg-white rounded border border-green-200">
+                <p className="text-sm font-medium text-green-800">📊 Auto-fill Summary:</p>
+                <p className="text-lg font-bold text-green-700 mt-1">
+                  {result.fields_filled}/{result.total_fields} Fields Filled ({result.success_rate || '0%'})
+                </p>
+              </div>
+
               {result.next_steps && (
                 <div className="text-sm text-green-700">
-                  <p className="font-medium mb-2">🤖 Automatic Process:</p>
+                  <p className="font-medium mb-2">🎯 Next Steps:</p>
                   <ol className="list-decimal list-inside space-y-1 bg-white p-3 rounded border">
-                    <li>Auto-fill launcher opened in new tab</li>
-                    <li>Torrent Power website opens automatically</li>
-                    <li>Form fields get filled automatically</li>
-                    <li>Review the data and submit</li>
+                    {result.next_steps && result.next_steps.map((step, idx) => (
+                      <li key={idx} className="text-green-700">{step}</li>
+                    ))}
                   </ol>
                 </div>
               )}
               <div className="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-700">
-                💡 <strong>Tip:</strong> If the auto-fill doesn't work, check the launcher tab for manual options
+                💡 <strong>Tip:</strong> Complete the CAPTCHA manually and click the SUBMIT button to proceed
               </div>
             </div>
           )}
