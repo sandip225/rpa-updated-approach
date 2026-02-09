@@ -133,12 +133,12 @@ def run_torrent_automation_with_results(automation_data: Dict[str, Any], options
         print("🔧 Initializing TorrentPowerAutomation service...")
         
         # Get options
-        auto_close = options.get('auto_close', True) if options else True  # Default to auto-close
-        close_delay = options.get('close_delay', 5) if options else 5  # Default 5 seconds (FAST!)
+        auto_close = options.get('auto_close', True) if options else True
+        close_delay = options.get('close_delay', 5) if options else 5
         
         # Initialize RPA automation service with options
         automation = TorrentPowerAutomation(auto_close=auto_close, close_delay=close_delay)
-        print(f"✅ Service initialized (auto_close={auto_close}, delay={close_delay}s - FAST MODE!)")
+        print(f"✅ Service initialized (auto_close={auto_close}, delay={close_delay}s)")
         
         # Run the complete automation workflow with visible browser
         print("🔥 EXECUTING AUTOMATION NOW...\n")
@@ -241,7 +241,7 @@ async def start_torrent_power_rpa_automation(
             options['close_delay'] = 5  # 5 seconds delay (FAST!)
         
         print(f"📋 Prepared automation data: {automation_data}")
-        print(f"⚙️ Options: {options} (FAST MODE - 5s delay)")
+        print(f"⚙️ Options: {options}")
         
         # RUN AUTOMATION SYNCHRONOUSLY AND WAIT FOR COMPLETION
         print("🎬 Running automation...\n")

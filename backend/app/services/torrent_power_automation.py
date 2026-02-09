@@ -45,32 +45,42 @@ class TorrentPowerAutomation:
         
         # Chrome options for production
         self.chrome_options = Options()
+        
+        # VISIBLE MODE - But optimized for speed! ⚡
+        self.chrome_options.add_argument("--start-maximized")
+        
         self.chrome_options.add_argument("--no-sandbox")
         self.chrome_options.add_argument("--disable-dev-shm-usage")
+        self.chrome_options.add_argument("--disable-gpu")
+        self.chrome_options.add_argument("--disable-software-rasterizer")
         self.chrome_options.add_argument("--disable-blink-features=AutomationControlled")
         self.chrome_options.add_experimental_option("excludeSwitches", ["enable-automation"])
         self.chrome_options.add_experimental_option('useAutomationExtension', False)
-        self.chrome_options.add_argument("--window-size=1280,720")
-        self.chrome_options.add_argument("--start-maximized")
+        self.chrome_options.add_argument("--window-size=1920,1080")
         self.chrome_options.add_argument("--disable-background-timer-throttling")
         self.chrome_options.add_argument("--disable-renderer-backgrounding")
         self.chrome_options.add_argument("--disable-backgrounding-occluded-windows")
-        
-        # Speed optimizations
         self.chrome_options.add_argument("--disable-extensions")
         self.chrome_options.add_argument("--disable-plugins")
-        self.chrome_options.add_argument("--disable-images")  # Faster loading
-        
+        self.chrome_options.add_argument("--disable-images")  # Faster page load
+        self.chrome_options.add_argument("--disable-notifications")
+        self.chrome_options.add_argument("--disable-popup-blocking")
+        self.chrome_options.add_argument("--disable-translate")
+        self.chrome_options.add_argument("--disable-sync")
+        self.chrome_options.add_argument("--disable-default-apps")
+        self.chrome_options.add_argument("--disable-preconnect")
+        self.chrome_options.add_argument("--disable-component-extensions-with-background-pages")
+
         # Explicitly set binary location (helps when multiple Chrome installs exist)
         try:
             self.chrome_options.binary_location = r"C:\Program Files\Google\Chrome\Application\chrome.exe"
         except Exception:
             pass
         
-        logger.info(f"🚀 TorrentPowerAutomation initialized (auto_close={auto_close}, delay={close_delay}s - FAST MODE!)")
+        logger.info(f"🚀 TorrentPowerAutomation initialized (auto_close={auto_close}, delay={close_delay}s)")
     
     def create_driver(self):
-        """Create Chrome WebDriver instance with INSTANT cached driver"""
+        """Create Chrome WebDriver instance with FAST cached driver"""
         try:
             logger.info("📍 Getting ChromeDriver (cached - should be instant)...")
             
@@ -92,22 +102,6 @@ class TorrentPowerAutomation:
                 self.driver = webdriver.Chrome(options=self.chrome_options)
                 elapsed = time.time() - start_time
                 logger.info(f"✅ Chrome opened (fallback) in {elapsed:.2f} seconds!")
-
-            # Ensure the window is visible and focused
-            try:
-                # maximize and switch to the window to force focus
-                try:
-                    self.driver.maximize_window()
-                except Exception:
-                    pass
-                try:
-                    self.driver.switch_to.window(self.driver.current_window_handle)
-                    self.driver.execute_script("window.focus();")
-                except Exception:
-                    pass
-                logger.info("✅ Attempted to focus the Chrome window")
-            except Exception:
-                logger.info("⚠️ Could not programmatically focus the Chrome window — continue anyway")
             
             logger.info("📍 Step: Removing automation indicators...")
             # Remove automation indicators
@@ -376,11 +370,26 @@ class TorrentPowerAutomation:
             # Step 5: Navigate to Official Torrent Power Website
             logger.info("🌐 Step 5: Opening official Torrent Power website...")
             logger.info(f"🎬 🔗 NAVIGATING TO: https://connect.torrentpower.com/tplcp/application/namechangerequest")
-            self.driver.get("https://connect.torrentpower.com/tplcp/application/namechangerequest")
             
-            # Wait for page to load completely
-            logger.info("⏳ Waiting for page to load...")
-            time.sleep(7)
+            # Set shorter timeout for faster navigation
+            self.driver.set_page_load_timeout(15)
+            
+            try:
+                self.driver.get("https://connect.torrentpower.com/tplcp/application/namechangerequest")
+            except Exception as e:
+                logger.warning(f"⚠️ Page load timeout (continuing anyway): {e}")
+            
+            # Wait for form to appear (faster than fixed wait)
+            logger.info("⏳ Waiting for form to load...")
+            try:
+                WebDriverWait(self.driver, 10).until(
+                    EC.presence_of_element_located((By.TAG_NAME, "form"))
+                )
+                logger.info("✅ Form loaded!")
+            except TimeoutException:
+                logger.warning("⚠️ Form not found, continuing anyway...")
+            
+            time.sleep(1)  # Quick pause for rendering
             self.take_screenshot("page_loaded")
             
             # Step 6: Official Website Auto-Fill
@@ -516,7 +525,7 @@ class TorrentPowerAutomation:
             else:
                 logger.info("")
                 logger.info("🎬 BROWSER WILL STAY OPEN FOR YOUR REVIEW!")
-                logger.info("✋ Close the browser manually when done, or it will timeout eventually")
+                logger.info("✋ Close the browser manually when done")
     
     def cleanup(self):
         """Cleanup resources if needed"""
