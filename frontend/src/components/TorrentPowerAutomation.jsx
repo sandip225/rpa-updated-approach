@@ -1,16 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Bot, CheckCircle, AlertCircle, Play, ExternalLink } from 'lucide-react';
 import api from '../api/axios';
 
 const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
-  const [automationStatus, setAutomationStatus] = useState('idle'); // idle, running, completed, failed
   const [result, setResult] = useState(null);
-  const [statusMessage, setStatusMessage] = useState('');
   const [taskId, setTaskId] = useState(null);
-  const [progress, setProgress] = useState(0);
-  const [fieldsFilled, setFieldsFilled] = useState(0);
-  const [currentField, setCurrentField] = useState('');
-  const [pollingInterval, setPollingInterval] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Poll for status updates
   useEffect(() => {
@@ -22,48 +16,35 @@ const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
         const data = response.data;
         
         console.log('📊 Status update:', data);
-        
-        setStatusMessage(data.message || 'Processing...');
-        setProgress(data.progress_percentage || 0);
-        setFieldsFilled(data.fields_filled || 0);
-        setCurrentField(data.current_field || '');
 
-        // Update automation status based on task status
+        // Update result based on task status
         if (data.status === 'completed') {
-          setAutomationStatus('completed');
           setResult(data.result);
+          setIsLoading(false);
           clearInterval(interval);
           if (data.result && onComplete) {
             onComplete(data.result);
           }
         } else if (data.status === 'failed') {
-          setAutomationStatus('failed');
           setResult({ success: false, message: data.message, error: data.message });
+          setIsLoading(false);
           clearInterval(interval);
-        } else if (data.status === 'progress') {
-          setAutomationStatus('running');
         }
       } catch (error) {
         console.error('❌ Error polling status:', error);
         if (error.response?.status === 404) {
-          setStatusMessage('❌ Task not found');
-          setAutomationStatus('failed');
+          setIsLoading(false);
           clearInterval(interval);
         }
       }
     }, 1000); // Poll every 1 second
-    
-    setPollingInterval(interval);
     
     return () => clearInterval(interval);
   }, [taskId, onComplete]);
 
   const startAutomation = async () => {
     try {
-      setAutomationStatus('running');
-      setStatusMessage('🚀 Starting automation...');
-      setProgress(0);
-      setFieldsFilled(0);
+      setIsLoading(true);
 
       // Debug: Log the userData
       console.log('🔍 userData:', userData);
@@ -99,7 +80,7 @@ const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
 
     } catch (error) {
       console.error('❌ Automation error:', error);
-      setAutomationStatus('failed');
+      setIsLoading(false);
       
       let errorMessage = 'Failed to start automation';
       if (error.message && error.message.includes('Missing required fields')) {
@@ -110,7 +91,6 @@ const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
         errorMessage = 'Server error';
       }
       
-      setStatusMessage(`❌ ${errorMessage}`);
       setResult({
         success: false,
         error: errorMessage,
@@ -119,166 +99,108 @@ const TorrentPowerAutomation = ({ userData, onComplete, onClose }) => {
     }
   };
 
-  const openTorrentPowerManually = () => {
-    // Store data in localStorage for potential auto-fill
-    const torrentData = {
-      city: userData.city || 'Ahmedabad',
-      service_number: userData.serviceNumber || userData.service_number || '',
-      t_number: userData.tNumber || userData.t_number || '',
-      mobile: userData.mobile || '',
-      email: userData.email || '',
-      timestamp: Date.now()
-    };
-    
-    try {
-      localStorage.setItem('torrent_autofill_data', JSON.stringify(torrentData));
-      console.log('💾 Data stored in localStorage for manual opening');
-    } catch (e) {
-      console.warn('Could not store data in localStorage:', e);
-    }
-    
-    // Open the website
-    window.open('https://connect.torrentpower.com/tplcp/application/namechangerequest', '_blank');
-    setStatusMessage('🌐 Torrent Power website opened manually. Data stored for potential auto-fill.');
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
-        
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-t-xl">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Bot className="w-6 h-6 text-white" />
-              <h2 className="text-lg font-bold text-white">Torrent Power Automation</h2>
+  // Show form modal if result has modal data
+  if (result && result.modal) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full overflow-hidden">
+          
+          {/* Modal Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 text-white flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">📋</span>
+              <h3 className="font-bold text-lg">Torrent Power | Name Change Application</h3>
             </div>
             <button
               onClick={onClose}
-              className="text-white hover:bg-white/20 p-1 rounded transition-colors"
+              className="text-white hover:bg-white/20 p-1 rounded transition-colors text-2xl"
             >
               ✕
             </button>
           </div>
-        </div>
-
-        {/* Content */}
-        <div className="p-6">
           
-          {/* Progress Bar */}
-          {automationStatus === 'running' && (
-            <div className="mb-4">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm font-medium text-gray-700">Progress</span>
-                <span className="text-sm font-bold text-blue-600">{progress}%</span>
-              </div>
-              <div className="w-full bg-gray-200 rounded-full h-2.5">
-                <div 
-                  className="bg-gradient-to-r from-blue-600 to-purple-600 h-2.5 rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                ></div>
-              </div>
-              <div className="mt-2 text-center">
-                <span className="text-sm font-semibold text-gray-700">
-                  {fieldsFilled}/5 Fields Filled
-                </span>
+          {/* Modal Content */}
+          <div className="p-6 bg-pink-50 space-y-4">
+            {/* Error Status Box - Red */}
+            <div className="border-2 border-red-500 rounded-lg p-4 bg-white">
+              <div className="flex items-center gap-3 justify-center">
+                <span className="text-red-600 text-3xl">⊘</span>
+                <p className="text-red-600 font-bold text-center text-lg">Form not Submitted</p>
               </div>
             </div>
-          )}
-          
-          {/* Status Display */}
-          <div className="mb-4">
-            <div className={`p-4 rounded-lg border ${
-              automationStatus === 'idle' ? 'bg-gray-50 border-gray-200' :
-              automationStatus === 'running' ? 'bg-blue-50 border-blue-200' :
-              automationStatus === 'completed' ? 'bg-green-50 border-green-200' :
-              'bg-red-50 border-red-200'
-            }`}>
-              <div className="flex items-center gap-3">
-                {automationStatus === 'running' && (
-                  <div className="w-5 h-5 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                )}
-                {automationStatus === 'completed' && <CheckCircle className="w-5 h-5 text-green-600" />}
-                {automationStatus === 'failed' && <AlertCircle className="w-5 h-5 text-red-600" />}
-                {automationStatus === 'idle' && <Bot className="w-5 h-5 text-gray-600" />}
-                
-                <p className={`font-medium ${
-                  automationStatus === 'running' ? 'text-blue-800' :
-                  automationStatus === 'completed' ? 'text-green-800' :
-                  automationStatus === 'failed' ? 'text-red-800' :
-                  'text-gray-800'
-                }`}>
-                  {statusMessage || 'Ready to start automation'}
-                </p>
-              </div>
-              {currentField && automationStatus === 'running' && (
-                <p className="text-sm text-blue-700 mt-2">
-                  <strong>Currently filling:</strong> {currentField}
-                </p>
-              )}
-            </div>
-          </div>
-
-          {/* Results Display */}
-          {result && result.success && (
-            <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
-              <h3 className="font-semibold text-green-800 mb-2">✅ Form Auto-filled Successfully!</h3>
-              <p className="text-sm text-green-700 mb-3">
-                Torrent Power form has been automatically filled with your data. Chrome browser opened and all available fields were filled.
-              </p>
-              
-              {/* Show actual field count */}
-              <div className="mb-3 p-3 bg-white rounded border border-green-200">
-                <p className="text-sm font-medium text-green-800">📊 Auto-fill Summary:</p>
-                <p className="text-lg font-bold text-green-700 mt-1">
-                  {result.fields_filled}/{result.total_fields} Fields Filled ({result.success_rate || '0%'})
-                </p>
-              </div>
-
-              {result.next_steps && (
-                <div className="text-sm text-green-700">
-                  <p className="font-medium mb-2">🎯 Next Steps:</p>
-                  <ol className="list-decimal list-inside space-y-1 bg-white p-3 rounded border">
-                    {result.next_steps && result.next_steps.map((step, idx) => (
-                      <li key={idx} className="text-green-700">{step}</li>
-                    ))}
-                  </ol>
-                </div>
-              )}
-              <div className="mt-3 p-2 bg-blue-50 rounded text-xs text-blue-700">
-                💡 <strong>Tip:</strong> Complete the CAPTCHA manually and click the SUBMIT button to proceed
-              </div>
-            </div>
-          )}
-
-          {result && !result.success && (
-            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-              <h3 className="font-semibold text-red-800 mb-2">❌ Automation Failed</h3>
-              <p className="text-sm text-red-700">{result.message || result.error}</p>
-            </div>
-          )}
-
-          {/* Action Buttons */}
-          <div className="flex gap-3">
-            {automationStatus === 'idle' && (
-              <button
-                onClick={startAutomation}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:from-blue-700 hover:to-purple-700 transition-colors flex items-center justify-center gap-2"
-              >
-                <Play className="w-4 h-4" />
-                Start Auto-fill
-              </button>
-            )}
             
+            {/* Checklist - Green */}
+            <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4">
+              <div className="space-y-3">
+                {result.modal.checklist && result.modal.checklist.map((item, idx) => {
+                  // Skip the last item (Form filled successfully)
+                  if (idx === result.modal.checklist.length - 1) return null;
+                  return (
+                    <div key={idx} className="flex items-center gap-3">
+                      <span className="text-green-600 text-xl">✓</span>
+                      <span className="text-green-600 text-xl">☑</span>
+                      <span className="text-green-700 font-medium">{item.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+            
+            {/* OK Button */}
             <button
-              onClick={openTorrentPowerManually}
-              className="flex-1 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg font-medium hover:bg-gray-200 transition-colors flex items-center justify-center gap-2"
+              onClick={onClose}
+              className="w-full bg-green-600 text-white font-bold py-3 rounded-lg hover:bg-green-700 transition-colors text-lg"
             >
-              <ExternalLink className="w-4 h-4" />
-              Open Manually
+              {result.modal.button?.text || 'OK'}
             </button>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6 text-center">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-700 font-medium">Processing your request...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (result && !result.success) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
+          <h3 className="font-bold text-red-600 text-lg mb-2">❌ Error</h3>
+          <p className="text-gray-700 mb-4">{result.message || result.error}</p>
+          <button
+            onClick={onClose}
+            className="w-full bg-red-600 text-white font-medium py-2 rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show initial state with start button
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg shadow-2xl max-w-md w-full p-6">
+        <h2 className="text-xl font-bold text-gray-800 mb-4">Torrent Power Automation</h2>
+        <p className="text-gray-600 mb-6">Click the button below to start auto-filling the Torrent Power form with your data.</p>
+        <button
+          onClick={startAutomation}
+          className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white font-bold py-3 rounded-lg hover:from-blue-700 hover:to-purple-700 transition-colors"
+        >
+          Start Auto-fill
+        </button>
       </div>
     </div>
   );

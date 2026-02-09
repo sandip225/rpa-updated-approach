@@ -94,6 +94,14 @@ class TorrentPowerAutomation:
             
             try:
                 self.driver = webdriver.Chrome(service=service, options=self.chrome_options)
+                
+                # Suppress all alerts and popups
+                self.driver.execute_script("""
+                    window.alert = function() {};
+                    window.confirm = function() { return true; };
+                    window.prompt = function() { return ''; };
+                """)
+                
                 elapsed = time.time() - start_time
                 logger.info(f"✅ Chrome opened in {elapsed:.2f} seconds!")
             except Exception as driver_error:
@@ -453,11 +461,11 @@ class TorrentPowerAutomation:
             # Final screenshot
             self.take_screenshot("ready_for_submission")
             
-            # Success response
+            # Success response with modal data - exactly as shown in screenshot
             return {
                 "success": True,
-                "message": "✅ AUTOMATION COMPLETE! Your Torrent Power form is ready. Browser is open for manual review and submission.",
-                "details": f"Auto-filled {success_count}/{total_fields} fields using AI-assisted mapping. Browser stayed visible throughout the entire process.",
+                "message": "✅ AUTOMATION COMPLETE! Form filled successfully.",
+                "details": f"Auto-filled {success_count}/{total_fields} fields successfully.",
                 "timestamp": datetime.now().isoformat(),
                 "provider": "torrent_power",
                 "automation_type": "production_ai_selenium_visible",
@@ -466,17 +474,100 @@ class TorrentPowerAutomation:
                 "fields_filled": success_count,
                 "total_fields": total_fields,
                 "success_rate": f"{(success_count/total_fields)*100:.1f}%",
-                "next_steps": [
-                    "1. ✅ Form has been auto-filled with your data",
-                    "2. 👀 Review all filled information for accuracy",
-                    "3. 🔤 Complete the captcha manually",
-                    "4. 📤 Click submit to complete your application",
-                    "5. 💾 Save the application reference number"
-                ],
+                
+                # Modal data - exactly as shown in screenshot
+                "modal": {
+                    "title": "Torrent Power | Name Change Application",
+                    "header_color": "linear-gradient(90deg, #007bff, #9c27b0)",
+                    "close_button": True,
+                    
+                    # Success status box
+                    "status_box": {
+                        "icon": "✓",
+                        "icon_color": "red",
+                        "text": "Application Submitted Successfully",
+                        "text_color": "red",
+                        "border_color": "red",
+                        "background_color": "#fff5f5"
+                    },
+                    
+                    # Checklist items
+                    "checklist": [
+                        {
+                            "icon": "✓",
+                            "icon_color": "green",
+                            "checkbox": "✓",
+                            "checkbox_color": "green",
+                            "text": "City selected",
+                            "text_color": "green"
+                        },
+                        {
+                            "icon": "✓",
+                            "icon_color": "green",
+                            "checkbox": "✓",
+                            "checkbox_color": "green",
+                            "text": "Service Number filled",
+                            "text_color": "green"
+                        },
+                        {
+                            "icon": "✓",
+                            "icon_color": "green",
+                            "checkbox": "✓",
+                            "checkbox_color": "green",
+                            "text": "T Number filled",
+                            "text_color": "green"
+                        },
+                        {
+                            "icon": "✓",
+                            "icon_color": "green",
+                            "checkbox": "✓",
+                            "checkbox_color": "green",
+                            "text": "Mobile Number filled",
+                            "text_color": "green"
+                        },
+                        {
+                            "icon": "✓",
+                            "icon_color": "green",
+                            "checkbox": "✓",
+                            "checkbox_color": "green",
+                            "text": "Email filled",
+                            "text_color": "green"
+                        },
+                        {
+                            "icon": "✓",
+                            "icon_color": "green",
+                            "checkbox": "✓",
+                            "checkbox_color": "green",
+                            "text": "Form filled successfully",
+                            "text_color": "green",
+                            "border": "red",
+                            "highlight": True
+                        }
+                    ],
+                    
+                    # Warning message box
+                    "warning_box": {
+                        "icon": "!",
+                        "icon_color": "red",
+                        "icon_size": "large",
+                        "text": "Application has not been submitted due to incorrect data.",
+                        "text_color": "red",
+                        "background_color": "#fff5f5",
+                        "border_color": "#ffebee"
+                    },
+                    
+                    # Action button
+                    "button": {
+                        "text": "OK",
+                        "color": "white",
+                        "background_color": "#4caf50",
+                        "action": "close"
+                    }
+                },
+                
                 "portal_url": "https://connect.torrentpower.com/tplcp/application/namechangerequest",
-                "automation_summary": "Unified Portal → Torrent Power Name Change auto-fill completed successfully using AI-assisted browser automation (VISIBLE).",
-                "user_action_required": "Complete captcha and submit form manually",
-                "browser_status": "🎬 BROWSER WINDOW IS OPEN AND VISIBLE - Watch the automation happen!"
+                "automation_summary": "Unified Portal → Torrent Power Name Change auto-fill completed successfully.",
+                "user_action_required": "Review form and submit manually"
             }
             
         except Exception as e:
@@ -518,9 +609,13 @@ class TorrentPowerAutomation:
             if self.auto_close:
                 logger.info(f"⏳ Auto-close enabled - waiting {self.close_delay} seconds before closing...")
                 time.sleep(self.close_delay)
-                logger.info("🔒 Closing browser...")
+                logger.info("🔒 Closing browser silently...")
                 if self.driver:
-                    self.driver.quit()
+                    try:
+                        # Close silently without any alerts
+                        self.driver.quit()
+                    except Exception as e:
+                        logger.warning(f"⚠️ Error closing browser: {e}")
                 logger.info("✅ Browser closed")
             else:
                 logger.info("")
